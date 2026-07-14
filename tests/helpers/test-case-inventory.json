@@ -1,0 +1,13 @@
+{
+  "_comment": "Manual test-case inventory this automated suite is expected to cover. Used by the traceability reporter to compute requirements/test-condition coverage — a separate metric from code coverage.",
+  "testCases": [
+    { "id": "TC-AUTH-001", "title": "Login form renders in Spanish under ES locale", "risk": "R-LOC-01", "priority": "High" },
+    { "id": "TC-AUTH-002", "title": "Register form renders in German under DE locale", "risk": "R-LOC-01", "priority": "High" },
+    { "id": "TC-HOME-001", "title": "Home page audience/calculator/success-story sections render fully in German under DE locale", "risk": "R-LOC-02", "priority": "High" },
+    { "id": "TC-API-001", "title": "Favorites-count API does not throw a client-side error for unauthenticated users", "risk": "R-API-01", "priority": "Medium" },
+    { "id": "TC-BRAND-001", "title": "Logo alt text, footer copyright, and feature image alt text localize under EN and DE", "risk": "R-LOC-03", "priority": "Low" },
+    { "id": "TC-PAY-001", "title": "Payments page subscription-expiry date uses DD.MM.YYYY under DE locale", "risk": "R-LOC-04", "priority": "Medium" },
+    { "id": "TC-PAY-002", "title": "Payments page prices use comma decimal separator under ES locale", "risk": "R-LOC-04", "priority": "Low" },
+    { "id": "TC-PAY-003", "title": "Payments page price-unit suffixes match locale under EN and DE", "risk": "R-LOC-04", "priority": "Low" }
+  ]
+}
