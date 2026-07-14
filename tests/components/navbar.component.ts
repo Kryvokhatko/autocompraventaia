@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import type { Locale } from "../pages/base.page";
 
 const LOCALE_LABEL: Record<Locale, string> = { en: "EN", es: "ES", de: "DE" };
@@ -25,8 +25,12 @@ export class NavbarComponent {
 
   constructor(private readonly page: Page) {
     this.container = page.getByRole("navigation");
+    // Unanchored: the dropdown-toggle's computed accessible name is
+    // " DE " (icon + surrounding whitespace from source formatting), so an
+    // anchored ^...$ regex never matches. Unanchored is still unambiguous —
+    // it's the only role=button element in the nav with a locale label.
     this.localeSwitcherButton = this.container.getByRole("button", {
-      name: /^(EN|ES|DE)$/,
+      name: /EN|ES|DE/,
     });
     this.loginLink = this.container.getByRole("link", { name: /sign in|iniciar sesión|anmelden/i });
     this.registerLink = this.container.getByRole("link", {
@@ -43,6 +47,11 @@ export class NavbarComponent {
   }
 
   async expectCurrentLocale(locale: Locale) {
-    await this.localeSwitcherButton.getByText(LOCALE_LABEL[locale]).waitFor();
+    // The locale label ("EN"/"ES"/"DE") is a bare text node inside the
+    // dropdown-toggle <a role="button">, not wrapped in its own child
+    // element — so it must be matched against the button's own text
+    // content (toContainText), not searched for as a descendant
+    // (getByText only matches descendant elements and would never find it).
+    await expect(this.localeSwitcherButton).toContainText(LOCALE_LABEL[locale]);
   }
 }

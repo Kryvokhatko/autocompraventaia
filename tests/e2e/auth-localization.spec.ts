@@ -8,6 +8,9 @@ import { test, expect } from "../fixtures/pages.fixture";
  * localizes correctly. These tests assert the CORRECT localized text so
  * they act as regression gates once the defect is fixed.
  */
+/*
+Not a test bug — leaving as-is: both tests now fail one line later, on the form heading ("Please sign in" instead of "Iniciar sesión", "Register" instead of "Registrieren"). That's the actual, already-documented app defect the spec file's own header describes: "the login and register forms are currently hardcoded to English regardless of the locale... these tests act as regression gates once the defect is fixed." That's a real product bug for the app team, not something to patch in the test.
+*/
 
 test.describe("Login form localization", () => {
   test("TC-AUTH-001 — login form renders in Spanish under ES locale", async ({ loginPage, page }) => {

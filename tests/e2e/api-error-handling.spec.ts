@@ -16,6 +16,16 @@ import type { Locale } from "../pages/base.page";
  * the client skipping the call entirely when no session exists.
  */
 
+/*
+This is a real defect in the app, not a broken test — the failure matches exactly what the test's own docstring describes it was written to catch.
+
+What's happening: /api/favorites/count returns a 302 redirect to /login for unauthenticated users. The client's fetch follows the redirect, gets the login page's HTML back, and tries to JSON.parse() it, throwing SyntaxError: Unexpected token '<', "<!DOCTYPE ".... That's caught internally and logged via console.error, which is exactly what api-error-handling.spec.ts:26-32 is watching for. It reproduces on all three locales (en/es/de), consistent with the bug being locale-independent.
+
+Test itself is fine — assertion, selector, and console listener all correctly capture the behavior described in the header comment. No test-code changes needed.
+
+The fix belongs in the app: either have the favorites-count client-side call skip the fetch entirely when there's no session, or have the endpoint return a proper JSON error (e.g. 401) instead of redirecting to an HTML page for API routes.
+*/
+
 const LOCALES: Locale[] = ["en", "es", "de"];
 
 test.describe("API error handling", () => {
