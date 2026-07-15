@@ -1,5 +1,5 @@
-import { test, expect } from "../fixtures/pages.fixture";
-import type { Locale } from "../pages/base.page";
+import { test, expect } from "../../fixtures/pages.fixture";
+import type { Locale } from "../../pages/base.page";
 
 /**
  * Branding-element localization regression test.
@@ -42,7 +42,7 @@ const LOCALES: Locale[] = ["en", "de"];
 
 test.describe("Branding localization", () => {
   for (const locale of LOCALES) {
-    test(`TC-BRAND-001 — branding elements localize under ${locale.toUpperCase()} locale`, async ({ homePage, page }) => {
+    test(`TC-BRAND-001 — branding elements localize under ${locale.toUpperCase()} locale`, { tag: ["@p2", "@regression"] }, async ({ homePage, page }) => {
       test.info().annotations.push({ type: "test-case", description: "TC-BRAND-001" });
 
       await homePage.goto(locale);

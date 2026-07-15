@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures/pages.fixture";
+import { test, expect } from "../../fixtures/pages.fixture";
 
 /**
  * Auth-form localization regression tests.
@@ -13,7 +13,7 @@ Not a test bug — leaving as-is: both tests now fail one line later, on the for
 */
 
 test.describe("Login form localization", () => {
-  test("TC-AUTH-001 — login form renders in Spanish under ES locale", async ({ loginPage, page }) => {
+  test("TC-AUTH-001 — login form renders in Spanish under ES locale", { tag: ["@critical", "@p0", "@regression"] }, async ({ loginPage, page }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-AUTH-001" });
 
     await loginPage.goto("es");
@@ -41,7 +41,7 @@ test.describe("Login form localization", () => {
 });
 
 test.describe("Register form localization", () => {
-  test("TC-AUTH-002 — register form renders in German under DE locale", async ({ registerPage, page }) => {
+  test("TC-AUTH-002 — register form renders in German under DE locale", { tag: ["@critical", "@p0", "@regression"] }, async ({ registerPage, page }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-AUTH-002" });
 
     await registerPage.goto("de");

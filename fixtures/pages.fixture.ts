@@ -3,6 +3,13 @@ import { HomePage } from "../pages/home.page";
 import { LoginPage } from "../pages/login.page";
 import { RegisterPage } from "../pages/register.page";
 import { PaymentsPage } from "../pages/payments.page";
+import { StatsPage } from "../pages/stats.page";
+import { BelowMarketPage } from "../pages/below-market.page";
+import { OffersPage } from "../pages/offers.page";
+import { MapPage } from "../pages/map.page";
+import { TopSalesPage } from "../pages/top-sales.page";
+import { NotificationsPage } from "../pages/notifications.page";
+import { FavoritesPage } from "../pages/favorites.page";
 
 /**
  * Wires Page Objects into tests, so spec files only ever talk to Page
@@ -13,6 +20,13 @@ type PageFixtures = {
   loginPage: LoginPage;
   registerPage: RegisterPage;
   paymentsPage: PaymentsPage;
+  statsPage: StatsPage;
+  belowMarketPage: BelowMarketPage;
+  offersPage: OffersPage;
+  mapPage: MapPage;
+  topSalesPage: TopSalesPage;
+  notificationsPage: NotificationsPage;
+  favoritesPage: FavoritesPage;
 };
 
 export const test = base.extend<PageFixtures>({
@@ -27,6 +41,27 @@ export const test = base.extend<PageFixtures>({
   },
   paymentsPage: async ({ page }, use) => {
     await use(new PaymentsPage(page));
+  },
+  statsPage: async ({ page }, use) => {
+    await use(new StatsPage(page));
+  },
+  belowMarketPage: async ({ page }, use) => {
+    await use(new BelowMarketPage(page));
+  },
+  offersPage: async ({ page }, use) => {
+    await use(new OffersPage(page));
+  },
+  mapPage: async ({ page }, use) => {
+    await use(new MapPage(page));
+  },
+  topSalesPage: async ({ page }, use) => {
+    await use(new TopSalesPage(page));
+  },
+  notificationsPage: async ({ page }, use) => {
+    await use(new NotificationsPage(page));
+  },
+  favoritesPage: async ({ page }, use) => {
+    await use(new FavoritesPage(page));
   },
 });
 

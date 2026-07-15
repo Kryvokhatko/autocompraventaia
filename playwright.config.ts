@@ -12,7 +12,7 @@ export default defineConfig({
   reporter: [
     ['list'],
     ['html'],
-    ['./tests/helpers/traceability-reporter.ts'],
+    ['./helpers/traceability-reporter.ts'],
   ],
   use: {
     baseURL: 'https://autocompraventaia.es/',

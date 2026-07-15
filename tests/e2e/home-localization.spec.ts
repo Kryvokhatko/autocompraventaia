@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures/pages.fixture";
+import { test, expect } from "../../fixtures/pages.fixture";
 
 /**
  * Home-page localization regression test.
@@ -10,7 +10,7 @@ import { test, expect } from "../fixtures/pages.fixture";
  */
 
 test.describe("Home page localization", () => {
-  test("TC-HOME-001 — DE home page renders audience, calculator, and success-story sections in German", async ({ homePage }) => {
+  test("TC-HOME-001 — DE home page renders audience, calculator, and success-story sections in German", { tag: ["@critical", "@p0", "@regression"] }, async ({ homePage }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-HOME-001" });
 
     await homePage.goto("de");

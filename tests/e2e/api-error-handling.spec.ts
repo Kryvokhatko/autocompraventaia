@@ -1,5 +1,5 @@
-import { test, expect } from "../fixtures/pages.fixture";
-import type { Locale } from "../pages/base.page";
+import { test, expect } from "../../fixtures/pages.fixture";
+import type { Locale } from "../../pages/base.page";
 
 /**
  * Client-side error-handling regression test.
@@ -30,7 +30,7 @@ const LOCALES: Locale[] = ["en", "es", "de"];
 
 test.describe("API error handling", () => {
   for (const locale of LOCALES) {
-    test(`TC-API-001 — /api/favorites/count does not error on unauthenticated load (locale=${locale})`, async ({ page }) => {
+    test(`TC-API-001 — /api/favorites/count does not error on unauthenticated load (locale=${locale})`, { tag: ["@p1", "@regression"] }, async ({ page }) => {
       test.info().annotations.push({ type: "test-case", description: "TC-API-001" });
 
       const consoleErrors: string[] = [];

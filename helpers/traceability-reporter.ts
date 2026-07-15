@@ -14,7 +14,7 @@ import { createLogger } from "./logger";
  *
  * This reporter cross-references the TC-<AREA>-<NUM> IDs declared as
  * `{ type: 'test-case', description: 'TC-...' }` annotations against
- * tests/helpers/test-case-inventory.json — the manual test-case inventory
+ * helpers/test-case-inventory.json — the manual test-case inventory
  * this suite is expected to cover — and reports which test conditions are
  * automated, which are missing, and the pass/fail status of each. This is
  * the PRIMARY coverage metric for this project; code coverage (if

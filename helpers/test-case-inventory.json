@@ -8,6 +8,23 @@
     { "id": "TC-BRAND-001", "title": "Logo alt text, footer copyright, and feature image alt text localize under EN and DE", "risk": "R-LOC-03", "priority": "Low" },
     { "id": "TC-PAY-001", "title": "Payments page subscription-expiry date uses DD.MM.YYYY under DE locale", "risk": "R-LOC-04", "priority": "Medium" },
     { "id": "TC-PAY-002", "title": "Payments page prices use comma decimal separator under ES locale", "risk": "R-LOC-04", "priority": "Low" },
-    { "id": "TC-PAY-003", "title": "Payments page price-unit suffixes match locale under EN and DE", "risk": "R-LOC-04", "priority": "Low" }
+    { "id": "TC-PAY-003", "title": "Payments page price-unit suffixes match locale under EN and DE", "risk": "R-LOC-04", "priority": "Low" },
+    { "id": "TC-AUTH-003", "title": "New user can register with email/password and reach the dashboard with an active trial", "risk": "R-FUNC-01", "priority": "High" },
+    { "id": "TC-AUTH-004", "title": "Registered user can log in with valid email/password credentials", "risk": "R-FUNC-01", "priority": "High" },
+    { "id": "TC-AUTH-005", "title": "Login form handles invalid input safely (wrong password, empty submit, malformed email)", "risk": "R-FUNC-01", "priority": "Medium" },
+    { "id": "TC-AUTH-006", "title": "Logged-in user can log out and loses access to authenticated pages", "risk": "R-FUNC-01", "priority": "Medium" },
+    { "id": "TC-AUTH-007", "title": "\"Continue with Google\" entry points exist on both register and login", "risk": "R-FUNC-01", "priority": "Low" },
+    { "id": "TC-STATS-001", "title": "Analytics page renders for an authenticated user", "risk": "R-FUNC-01", "priority": "Medium" },
+    { "id": "TC-STATS-002", "title": "Analytics page triggers repeated resource-load failures (410/404) in console", "risk": "R-DATA-01", "priority": "Low" },
+    { "id": "TC-MARKET-001", "title": "Below-market page does not localize for EN or DE locale", "risk": "R-LOC-05", "priority": "Medium" },
+    { "id": "TC-OFFERS-001", "title": "Offers Dashboard renders for an authenticated user", "risk": "R-FUNC-01", "priority": "Medium" },
+    { "id": "TC-MAP-001", "title": "Interactive Map renders offers for an authenticated user", "risk": "R-FUNC-01", "priority": "Low" },
+    { "id": "TC-TOPSALES-001", "title": "Top Sales ranking page renders for an authenticated user", "risk": "R-FUNC-01", "priority": "Low" },
+    { "id": "TC-NOTIF-001", "title": "Notifications settings page renders for an authenticated user", "risk": "R-FUNC-01", "priority": "Low" },
+    { "id": "TC-FAV-001", "title": "Favorites page renders pre-seeded sample data and shows the badge count in the nav", "risk": "R-FUNC-01", "priority": "Medium" },
+    { "id": "TC-FAV-002", "title": "Favorites-count badge updates immediately after removing a favorite, without a page reload", "risk": "R-FUNC-01", "priority": "Low" },
+    { "id": "TC-PAY-004", "title": "Payments page displays all three subscription plans with correct pricing and an accurate active-subscription banner", "risk": "R-FUNC-01", "priority": "High" },
+    { "id": "TC-TOS-001", "title": "Terms of Service is reachable without authentication", "risk": "R-ACC-01", "priority": "High" },
+    { "id": "TC-SEC-001", "title": "Protected routes correctly redirect unauthenticated visitors to login", "risk": "R-SEC-01", "priority": "High" }
   ]
 }

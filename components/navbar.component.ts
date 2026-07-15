@@ -22,6 +22,14 @@ export class NavbarComponent {
   readonly localeSwitcherButton: Locator;
   readonly loginLink: Locator;
   readonly registerLink: Locator;
+  readonly logoutButton: Locator;
+  // Text pattern confirmed live: "paid 14 min" counting down. Structure
+  // beyond the text itself wasn't further enumerated during the walkthrough.
+  readonly trialBadge: Locator;
+  // Confirmed live: the favorites link (id="favorites-link", icon-only,
+  // named via title="Favorites" not an accessible name — same pattern as
+  // logoutButton) contains <span id="favorites-count">11</span>.
+  readonly favoritesCountBadge: Locator;
 
   constructor(private readonly page: Page) {
     this.container = page.getByRole("navigation");
@@ -36,6 +44,13 @@ export class NavbarComponent {
     this.registerLink = this.container.getByRole("link", {
       name: /register|regist|jetzt registrieren/i,
     });
+    // Icon-only anchor, no visible text label — identified by its onclick
+    // handler and title attribute, confirmed live: href="#",
+    // onclick="handleLogout(event)", title="Logout" (English regardless of
+    // locale).
+    this.logoutButton = this.container.locator('[onclick*="handleLogout"]');
+    this.trialBadge = this.container.getByText(/paid\s*\d+\s*min/i);
+    this.favoritesCountBadge = this.container.locator("#favorites-count");
   }
 
   async switchLocaleViaUi(locale: Locale) {
@@ -53,5 +68,13 @@ export class NavbarComponent {
     // content (toContainText), not searched for as a descendant
     // (getByText only matches descendant elements and would never find it).
     await expect(this.localeSwitcherButton).toContainText(LOCALE_LABEL[locale]);
+  }
+
+  async logout() {
+    await this.logoutButton.click();
+  }
+
+  async expectFavoritesCount(count: number) {
+    await expect(this.favoritesCountBadge).toHaveText(String(count));
   }
 }

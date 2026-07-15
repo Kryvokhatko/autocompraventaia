@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures/pages.fixture";
+import { test, expect } from "../../fixtures/pages.fixture";
 
 /**
  * Payments-page locale-formatting regression tests.
@@ -16,7 +16,7 @@ import { test, expect } from "../fixtures/pages.fixture";
 test.use({ storageState: "playwright/.auth/trial-session.json" });
 
 test.describe("Payments date formatting", () => {
-  test("TC-PAY-001 — subscription-expiry date uses DD.MM.YYYY under DE locale", async ({ paymentsPage }) => {
+  test("TC-PAY-001 — subscription-expiry date uses DD.MM.YYYY under DE locale", { tag: ["@p1", "@regression"] }, async ({ paymentsPage }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-001" });
 
     await paymentsPage.goto("de");
@@ -29,7 +29,7 @@ test.describe("Payments date formatting", () => {
 });
 
 test.describe("Payments decimal-separator formatting", () => {
-  test("TC-PAY-002 — prices use comma decimal separator under ES locale", async ({ paymentsPage }) => {
+  test("TC-PAY-002 — prices use comma decimal separator under ES locale", { tag: ["@p2", "@regression"] }, async ({ paymentsPage }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-002" });
 
     await paymentsPage.goto("es");
@@ -46,7 +46,7 @@ test.describe("Payments decimal-separator formatting", () => {
 });
 
 test.describe("Payments unit-suffix localization", () => {
-  test("TC-PAY-003 — price-unit suffixes match locale under EN and DE", async ({ paymentsPage }) => {
+  test("TC-PAY-003 — price-unit suffixes match locale under EN and DE", { tag: ["@p2", "@regression"] }, async ({ paymentsPage }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-003" });
 
     // --- EN locale ---
@@ -78,5 +78,23 @@ test.describe("Payments unit-suffix localization", () => {
     expect(deText).toMatch(/\/Tag/);
     expect(deText).toMatch(/\/Monat/);
     expect(deText).toMatch(/\/Jahr/);
+  });
+});
+
+test.describe("Payments subscription plans", () => {
+  test("TC-PAY-004 — plan pricing (daily/monthly/yearly) is correct and active-subscription banner is visible", { tag: ["@critical", "@p0"] }, async ({ paymentsPage }) => {
+    test.info().annotations.push({ type: "test-case", description: "TC-PAY-004" });
+
+    await paymentsPage.goto("en");
+
+    const daily = await paymentsPage.priceText("daily");
+    const monthly = await paymentsPage.priceText("monthly");
+    const yearly = await paymentsPage.priceText("yearly");
+
+    expect(daily).toContain("2.99");
+    expect(monthly).toContain("11.99");
+    expect(yearly).toContain("99.99");
+
+    await expect(paymentsPage.activeSubscriptionBanner).toBeVisible();
   });
 });

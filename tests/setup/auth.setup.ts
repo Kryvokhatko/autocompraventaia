@@ -1,7 +1,7 @@
 import { test as setup } from "@playwright/test";
-import { RegisterPage } from "../pages/register.page";
-import { createDisposableAccount, trialTimeRemainingMs } from "../helpers/test-data";
-import { createLogger } from "../helpers/logger";
+import { RegisterPage } from "../../pages/register.page";
+import { createDisposableAccount, trialTimeRemainingMs } from "../../helpers/test-data";
+import { createLogger } from "../../helpers/logger";
 
 /**
  * Registers ONE fresh disposable account and persists storageState for reuse
