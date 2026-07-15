@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QA Walkthrough Report — autocompraventaia.es</title>
+<style>
+  :root {
+    --bg: #f7f8fa; --panel: #ffffff; --text: #1f2430; --text-muted: #5b6472; --border: #e2e5ea;
+    --accent: #2f6fed; --pass: #1a8f5e; --pass-bg: #e6f6ee; --fail: #c92a2a; --fail-bg: #fdeaea;
+    --partial: #b06a00; --partial-bg: #fdf2df; --skip: #6b7280; --skip-bg: #eef0f2;
+    --sev-high: #c92a2a; --sev-medium: #b06a00; --sev-low: #5b6472; --code-bg: #eef1f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161c; --panel: #1c1f27; --text: #e7e9ee; --text-muted: #9aa2b1; --border: #2c303a;
+      --accent: #6d9bff; --pass: #3ecf8e; --pass-bg: #133226; --fail: #ff6b6b; --fail-bg: #3a1c1c;
+      --partial: #f0a94e; --partial-bg: #3a2a12; --skip: #8b93a2; --skip-bg: #23262e;
+      --sev-high: #ff6b6b; --sev-medium: #f0a94e; --sev-low: #9aa2b1; --code-bg: #22252d;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14161c; --panel: #1c1f27; --text: #e7e9ee; --text-muted: #9aa2b1; --border: #2c303a;
+    --accent: #6d9bff; --pass: #3ecf8e; --pass-bg: #133226; --fail: #ff6b6b; --fail-bg: #3a1c1c;
+    --partial: #f0a94e; --partial-bg: #3a2a12; --skip: #8b93a2; --skip-bg: #23262e;
+    --sev-high: #ff6b6b; --sev-medium: #f0a94e; --sev-low: #9aa2b1; --code-bg: #22252d;
+  }
+  :root[data-theme="light"] {
+    --bg: #f7f8fa; --panel: #ffffff; --text: #1f2430; --text-muted: #5b6472; --border: #e2e5ea;
+    --accent: #2f6fed; --pass: #1a8f5e; --pass-bg: #e6f6ee; --fail: #c92a2a; --fail-bg: #fdeaea;
+    --partial: #b06a00; --partial-bg: #fdf2df; --skip: #6b7280; --skip-bg: #eef0f2;
+    --sev-high: #c92a2a; --sev-medium: #b06a00; --sev-low: #5b6472; --code-bg: #eef1f6;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
+  header.doc-header { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; }
+  header.doc-header h1 { margin: 0 0 6px; font-size: 1.5rem; }
+  header.doc-header .subtitle { color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem; }
+  dl.meta { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; font-size: 0.92rem; }
+  dl.meta dt { color: var(--text-muted); font-weight: 600; }
+  dl.meta dd { margin: 0; }
+  nav.toc { position: sticky; top: 12px; z-index: 5; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.88rem; }
+  nav.toc a { color: var(--accent); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  section { margin-bottom: 40px; }
+  section > h2 { font-size: 1.15rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; margin-bottom: 16px; scroll-margin-top: 60px; }
+  h3 { font-size: 1rem; margin: 20px 0 10px; scroll-margin-top: 60px; }
+  h4 { font-size: 0.98rem; margin: 4px 0 8px; scroll-margin-top: 60px; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.88em; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  .badge { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 22px; padding: 0 6px; border-radius: 6px; font-weight: 700; font-size: 0.78rem; }
+  .badge.pass { background: var(--pass-bg); color: var(--pass); }
+  .badge.fail { background: var(--fail-bg); color: var(--fail); }
+  .badge.partial { background: var(--partial-bg); color: var(--partial); }
+  .badge.skip { background: var(--skip-bg); color: var(--skip); }
+  table.summary { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  table.summary th, table.summary td { padding: 9px 12px; text-align: center; border-bottom: 1px solid var(--border); }
+  table.summary th:first-child, table.summary td:first-child { text-align: left; }
+  table.summary th { background: var(--code-bg); font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em;  white-space: nowrap;}
+  table.summary td.flow-name a { color: var(--text); text-decoration: none; font-size: 0.93rem; }
+  table.summary td.flow-name a:hover { color: var(--accent); }
+  table.summary tr:last-child td { border-bottom: none; }
+  table.summary tr:hover td { background: var(--code-bg); }
+  .flow-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; margin-top: 10px; scroll-margin-top: 60px; }
+  .flow-card .flow-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .flow-card .flow-head h4 { margin: 0; }
+  .flow-card .locale-badges { display: flex; gap: 6px; }
+  .flow-card .locale-badges .loc { display: flex; align-items: center; gap: 4px; font-size: 0.78rem; color: var(--text-muted); }
+  .flow-card p.detail { margin: 10px 0 0; color: var(--text-muted); font-size: 0.92rem; }
+  .card-list { display: flex; flex-direction: column; gap: 10px; }
+  .note-card { background: var(--panel); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; padding: 12px 16px; font-size: 0.93rem; }
+  .note-card .date { display: block; margin-top: 4px; color: var(--text-muted); font-size: 0.78rem; }
+  .note-card.muted { border-left-color: var(--skip); color: var(--text-muted); }
+  .defect-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; margin-bottom: 14px; scroll-margin-top: 60px; border-left: 5px solid var(--sev-low); }
+  .defect-card.sev-high { border-left-color: var(--sev-high); }
+  .defect-card.sev-medium { border-left-color: var(--sev-medium); }
+  .defect-card.sev-low { border-left-color: var(--sev-low); }
+  .defect-card h4 { margin: 0 0 8px; font-size: 1rem; }
+  .defect-card .sev-row { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.02em; }
+  .pill.sev-high { background: var(--fail-bg); color: var(--sev-high); }
+  .pill.sev-medium { background: var(--partial-bg); color: var(--sev-medium); }
+  .pill.sev-low { background: var(--skip-bg); color: var(--sev-low); }
+  .pill.date { background: var(--code-bg); color: var(--text-muted); }
+  .defect-card dl.fields { margin: 0; display: grid; grid-template-columns: 130px 1fr; gap: 6px 12px; font-size: 0.92rem; }
+  .defect-card dl.fields dt { color: var(--text-muted); font-weight: 600; }
+  .defect-card dl.fields dd { margin: 0; }
+  .status-table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 18px; }
+  .status-table th, .status-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); text-align: left; font-size: 0.9rem; }
+  .status-table th { background: var(--code-bg); color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase;  white-space: nowrap;}
+  .status-table tr:last-child td { border-bottom: none; }
+  .status-table tr:hover td { background: var(--code-bg); }
+  .status-table a { color: var(--text); text-decoration: none; }
+  .status-table a:hover { color: var(--accent); }
+  table.trace { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  table.trace th, table.trace td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 0.88rem; vertical-align: top; word-break: break-word; }
+  table.trace th { background: var(--code-bg); color: var(--text-muted); text-transform: uppercase; font-size: 0.76rem; text-align: left;  white-space: nowrap;}
+  table.trace tr:last-child td { border-bottom: none; }
+  table.trace tr:hover td { background: var(--code-bg); }
+  @media print {
+    nav.toc { display: none; }
+    .flow-card, .defect-card, .note-card, table.summary, table.trace { break-inside: avoid; }
+    body { background: #fff; color: #000; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="doc-header">
+    <h1>QA Walkthrough Report</h1>
+    <div class="subtitle">autocompraventaia.es</div>
+    <dl class="meta">
+      <dt>Last updated</dt><dd>2026-07-15</dd>
+      <dt>Locales covered</dt><dd>English, Spanish, German</dd>
+      <dt>Formalized test cases</dt><dd><code>i18n_test_cases_2026-07-12.md</code>, <code>test_cases_2026-07-15.md</code></dd>
+    </dl>
+  </header>
+
+  <nav class="toc">
+    <a href="#scope">1. Scope</a>
+    <a href="#coverage">2. Coverage</a>
+    <a href="#findings">3. Findings</a>
+    <a href="#defects">4. Defects</a>
+    <a href="#traceability">5. Traceability Index</a>
+    <a href="#regression">6. Regression Impact</a>
+  </nav>
+
+  <section id="scope">
+    <h2>1. Scope</h2>
+    <dl class="meta">
+      <dt>Mission</dt><dd>QA all workflows on https://autocompraventaia.es/, restricted to English, Spanish, and German locales.</dd>
+      <dt>Covered</dt><dd>Home page, locale switching, registration (email/password and Google), login (email/password and Google, including error handling), logout, Offers Dashboard, Below-Market page, Interactive Map, Top Sales, Analytics, Notifications, Favorites, Payments, Terms of Service, footer links, and unauthenticated route protection.</dd>
+      <dt>Out of scope</dt><dd>All locale variants other than EN/ES/DE; real payment submission; completing a full Google OAuth consent flow; mobile/tablet viewports; native-speaker linguistic review of translation quality.</dd>
+    </dl>
+  </section>
+
+  <section id="coverage">
+    <h2>2. Coverage</h2>
+    <p style="color:var(--text-muted); font-size:0.88rem;">
+      <span class="badge pass">✓</span> confirmed working &nbsp;
+      <span class="badge fail">✗</span> defect &nbsp;
+      <span class="badge skip">—</span> not tested &nbsp;
+      — click a flow name to jump to its detail below.
+    </p>
+    <table class="summary">
+      <tr><th>Flow</th><th>EN</th><th>ES</th><th>DE</th></tr>
+      <tr><td class="flow-name"><a href="#flow-1">1. Home / Landing Page</a></td><td><span class="badge pass">✓</span></td><td><span class="badge pass">✓</span></td><td><span class="badge fail">✗</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-2">2. Locale switching</a></td><td><span class="badge pass">✓</span></td><td><span class="badge pass">✓</span></td><td><span class="badge pass">✓</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-3">3. Registration</a></td><td><span class="badge pass">✓</span></td><td><span class="badge fail">✗</span></td><td><span class="badge fail">✗</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-4">4. Registration via Google</a></td><td><span class="badge pass">✓</span></td><td><span class="badge pass">✓</span></td><td><span class="badge pass">✓</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-5">5. Login</a></td><td><span class="badge pass">✓</span></td><td><span class="badge fail">✗</span></td><td><span class="badge fail">✗</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-6">6. Login via Google</a></td><td><span class="badge pass">✓</span></td><td><span class="badge pass">✓</span></td><td><span class="badge pass">✓</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-7">7. Login error handling</a></td><td><span class="badge pass">✓</span></td><td><span class="badge skip">—</span></td><td><span class="badge skip">—</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-8">8. Logout</a></td><td><span class="badge pass">✓</span></td><td><span class="badge skip">—</span></td><td><span class="badge skip">—</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-9">9. Offers Dashboard</a></td><td><span class="badge pass">✓</span></td><td><span class="badge skip">—</span></td><td><span class="badge skip">—</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-10">10. Below-Market</a></td><td><span class="badge fail">✗</span></td><td><span class="badge skip">—</span></td><td><span class="badge fail">✗</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-11">11. Interactive Map</a></td><td><span class="badge pass">✓</span></td><td><span class="badge skip">—</span></td><td><span class="badge skip">—</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-12">12. Top Sales</a></td><td><span class="badge pass">✓</span></td><td><span class="badge skip">—</span></td><td><span class="badge skip">—</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-13">13. Analytics</a></td><td><span class="badge partial">±</span></td><td><span class="badge skip">—</span></td><td><span class="badge skip">—</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-14">14. Notifications</a></td><td><span class="badge pass">✓</span></td><td><span class="badge skip">—</span></td><td><span class="badge skip">—</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-15">15. Favorites</a></td><td><span class="badge partial">±</span></td><td><span class="badge skip">—</span></td><td><span class="badge skip">—</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-16">16. Payments</a></td><td><span class="badge pass">✓</span></td><td><span class="badge pass">✓</span></td><td><span class="badge pass">✓</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-17">17. Terms of Service</a></td><td><span class="badge fail">✗</span></td><td><span class="badge fail">✗</span></td><td><span class="badge fail">✗</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-18">18. Footer links</a></td><td><span class="badge pass">✓</span></td><td><span class="badge pass">✓</span></td><td><span class="badge pass">✓</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-19">19. Unauthenticated route protection</a></td><td><span class="badge pass">✓</span></td><td><span class="badge pass">✓</span></td><td><span class="badge pass">✓</span></td></tr>
+      <tr><td class="flow-name"><a href="#flow-20">20. Favorites-count API (logged out)</a></td><td><span class="badge fail">✗</span></td><td><span class="badge fail">✗</span></td><td><span class="badge fail">✗</span></td></tr>
+    </table>
+
+    <div style="margin-top:22px; display:flex; flex-direction:column; gap:2px;">
+      <div class="flow-card" id="flow-1"><div class="flow-head"><h4>1. Home / Landing Page</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge pass">✓</span>ES</span><span class="loc"><span class="badge fail">✗</span>DE</span></div></div><p class="detail">Fully working in English and Spanish, including the audience cards, profit calculator, and success stories. In German, the navigation, hero section, and call-to-action are translated, but the audience cards, calculator details, and success-story labels remain in Spanish — see <a href="#D-03">D-03</a>.</p></div>
+      <div class="flow-card" id="flow-2"><div class="flow-head"><h4>2. Locale switching</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge pass">✓</span>ES</span><span class="loc"><span class="badge pass">✓</span>DE</span></div></div><p class="detail">The language switcher and direct <code>?_locale=</code> links both load the correct locale consistently across pages.</p></div>
+      <div class="flow-card" id="flow-3"><div class="flow-head"><h4>3. Registration</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge fail">✗</span>ES</span><span class="loc"><span class="badge fail">✗</span>DE</span></div></div><p class="detail">Account creation succeeds in all three languages. In Spanish and German, the registration form itself (heading, field labels, button, sign-up options) displays in English even though the rest of the page is translated — see <a href="#D-02">D-02</a>.</p></div>
+      <div class="flow-card" id="flow-4"><div class="flow-head"><h4>4. Registration via Google</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge pass">✓</span>ES</span><span class="loc"><span class="badge pass">✓</span>DE</span></div></div><p class="detail">The "Sign up with Google" link is present on all three locales and correctly routes to the Google connector.</p></div>
+      <div class="flow-card" id="flow-5"><div class="flow-head"><h4>5. Login</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge fail">✗</span>ES</span><span class="loc"><span class="badge fail">✗</span>DE</span></div></div><p class="detail">Same pattern as Registration — login itself works in all three languages; the form content is English-only on Spanish and German. See <a href="#D-02">D-02</a>.</p></div>
+      <div class="flow-card" id="flow-6"><div class="flow-head"><h4>6. Login via Google</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge pass">✓</span>ES</span><span class="loc"><span class="badge pass">✓</span>DE</span></div></div><p class="detail">Present and correctly routed on all three locales.</p></div>
+      <div class="flow-card" id="flow-7"><div class="flow-head"><h4>7. Login error handling</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge skip">—</span>ES</span><span class="loc"><span class="badge skip">—</span>DE</span></div></div><p class="detail">Wrong credentials show an inline "Invalid credentials." message; an empty submission is blocked by the browser's native "Please fill out this field." validation. Not separately tested on Spanish/German — same shared form and backend as English.</p></div>
+      <div class="flow-card" id="flow-8"><div class="flow-head"><h4>8. Logout</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge skip">—</span>ES</span><span class="loc"><span class="badge skip">—</span>DE</span></div></div><p class="detail">Clears the session and redirects to the home page; a subsequent attempt to reach an authenticated page correctly redirects to login.</p></div>
+      <div class="flow-card" id="flow-9"><div class="flow-head"><h4>9. Offers Dashboard</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge skip">—</span>ES</span><span class="loc"><span class="badge skip">—</span>DE</span></div></div><p class="detail">Loads with filter controls and a populated listing of 123 cars.</p></div>
+      <div class="flow-card" id="flow-10"><div class="flow-head"><h4>10. Below-Market</h4><div class="locale-badges"><span class="loc"><span class="badge fail">✗</span>EN</span><span class="loc"><span class="badge skip">—</span>ES</span><span class="loc"><span class="badge fail">✗</span>DE</span></div></div><p class="detail">Page title, heading, and all labels are in Spanish on both English and German locales — see <a href="#D-10">D-10</a>.</p></div>
+      <div class="flow-card" id="flow-11"><div class="flow-head"><h4>11. Interactive Map</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge skip">—</span>ES</span><span class="loc"><span class="badge skip">—</span>DE</span></div></div><p class="detail">Renders with a large number of geolocated offer markers.</p></div>
+      <div class="flow-card" id="flow-12"><div class="flow-head"><h4>12. Top Sales</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge skip">—</span>ES</span><span class="loc"><span class="badge skip">—</span>DE</span></div></div><p class="detail">Renders a ranked best-sellers list with a heading and methodology note, correctly in English.</p></div>
+      <div class="flow-card" id="flow-13"><div class="flow-head"><h4>13. Analytics</h4><div class="locale-badges"><span class="loc"><span class="badge partial">±</span>EN</span><span class="loc"><span class="badge skip">—</span>ES</span><span class="loc"><span class="badge skip">—</span>DE</span></div></div><p class="detail">Page structure (heading, calendar, seven analysis tabs) renders correctly. Separately, the page triggers repeated console resource-load errors — see <a href="#D-11">D-11</a>.</p></div>
+      <div class="flow-card" id="flow-14"><div class="flow-head"><h4>14. Notifications</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge skip">—</span>ES</span><span class="loc"><span class="badge skip">—</span>DE</span></div></div><p class="detail">Channel settings (Telegram, Email) and an empty notification history table render correctly.</p></div>
+      <div class="flow-card" id="flow-15"><div class="flow-head"><h4>15. Favorites</h4><div class="locale-badges"><span class="loc"><span class="badge partial">±</span>EN</span><span class="loc"><span class="badge skip">—</span>ES</span><span class="loc"><span class="badge skip">—</span>DE</span></div></div><p class="detail">Eleven cars are pre-seeded for every new account — intentional shared demo data, not a bug. Removing a favorite works and is correctly saved, but the nav badge count doesn't update until the page is reloaded — see <a href="#D-13">D-13</a>.</p></div>
+      <div class="flow-card" id="flow-16"><div class="flow-head"><h4>16. Payments</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge pass">✓</span>ES</span><span class="loc"><span class="badge pass">✓</span>DE</span></div></div><p class="detail">Plan headings, pricing, and the active-subscription banner are all correctly localized on all three locales. Three separate formatting defects remain on the page — see <a href="#D-07">D-07</a>, <a href="#D-09">D-09</a>, <a href="#D-14">D-14</a>.</p></div>
+      <div class="flow-card" id="flow-17"><div class="flow-head"><h4>17. Terms of Service</h4><div class="locale-badges"><span class="loc"><span class="badge fail">✗</span>EN</span><span class="loc"><span class="badge fail">✗</span>ES</span><span class="loc"><span class="badge fail">✗</span>DE</span></div></div><p class="detail">Redirects an unauthenticated visitor to the login page on all three locales, whether reached by direct URL or by the link in the public footer. Renders correctly once logged in — see <a href="#D-12">D-12</a>.</p></div>
+      <div class="flow-card" id="flow-18"><div class="flow-head"><h4>18. Footer links</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge pass">✓</span>ES</span><span class="loc"><span class="badge pass">✓</span>DE</span></div></div><p class="detail">Social and email links are valid on all three locales. The copyright line itself stays in Spanish on English and German — see <a href="#D-05">D-05</a>.</p></div>
+      <div class="flow-card" id="flow-19"><div class="flow-head"><h4>19. Unauthenticated route protection</h4><div class="locale-badges"><span class="loc"><span class="badge pass">✓</span>EN</span><span class="loc"><span class="badge pass">✓</span>ES</span><span class="loc"><span class="badge pass">✓</span>DE</span></div></div><p class="detail">Every protected route (Offers, Map, Top Sales, Below-Market, Favorites, Payments) correctly redirects an unauthenticated visitor to the login page, on all three locales.</p></div>
+      <div class="flow-card" id="flow-20"><div class="flow-head"><h4>20. Favorites-count API (logged out)</h4><div class="locale-badges"><span class="loc"><span class="badge fail">✗</span>EN</span><span class="loc"><span class="badge fail">✗</span>ES</span><span class="loc"><span class="badge fail">✗</span>DE</span></div></div><p class="detail">Loading any public page while logged out triggers a client-side error — see <a href="#D-01">D-01</a>.</p></div>
+    </div>
+  </section>
+
+  <section id="findings">
+    <h2>3. Findings</h2>
+    <p style="color:var(--text-muted); font-size:0.9rem;">Usability/UX observations that aren't necessarily wrong, just worth attention — kept separate from Defects below.</p>
+    <div class="card-list">
+      <div class="note-card">Trial-countdown wording shows "paid X min" / "pagado X min" / "bezahlt X min" for what is a free trial — potentially confusing phrasing.<span class="date">Last confirmed: 2026-07-15</span></div>
+      <div class="note-card">Form validation (required fields, email format) uses the browser's built-in messages, which aren't locale-aware.<span class="date">Last confirmed: 2026-07-15</span></div>
+      <div class="note-card">Proceeding to the Stripe-hosted payment step leaves the site's visual context entirely and renders in English regardless of the site's active locale.<span class="date">Last confirmed: 2026-07-12</span></div>
+      <div class="note-card">Only card payment via Stripe is currently available; PayPal and Bank Transfer are both marked "Coming soon."<span class="date">Last confirmed: 2026-07-15</span></div>
+      <div class="note-card">Minor accessibility gaps: the password field is missing an <code>autocomplete</code> attribute; three fields on the offers filter panel have no associated label.<span class="date">Last confirmed: 2026-07-12</span></div>
+      <div class="note-card">Nav bar content differs between the home page (reduced) and inner pages (full set of links) — likely intentional, worth a design-consistency review.<span class="date">Last confirmed: 2026-07-12</span></div>
+      <div class="note-card">Login errors reload the page rather than validating inline via AJAX, creating a small perceptible delay.<span class="date">Last confirmed: 2026-07-12</span></div>
+      <div class="note-card">The "Invalid credentials." login error text isn't marked with an ARIA <code>alert</code> role, so it may not be reliably announced by screen readers.<span class="date">Last confirmed: 2026-07-15</span></div>
+      <div class="note-card">When an unauthenticated visitor is redirected to login from a locale-scoped page, the locale is dropped — currently invisible only because the login form is itself English-only (<a href="#D-02">D-02</a>); it will become independently visible once that's fixed.<span class="date">Last confirmed: 2026-07-15</span></div>
+    </div>
+    <p style="color:var(--text-muted); font-size:0.85rem; margin-top:14px;">Translation grammar/wording was spot-checked but not linguistically reviewed by a native speaker — this report covers presence/absence and formatting correctness of translations, not their linguistic quality.</p>
+  </section>
+
+  <section id="defects">
+    <h2>4. Defects</h2>
+    <table class="status-table">
+      <tr><th>ID</th><th>Title</th><th>Severity</th><th>Priority</th><th>Last confirmed</th></tr>
+      <tr><td><a href="#D-01"><code>D-01</code></a></td><td>Favorites-count API throws a client-side error for unauthenticated users</td><td>Medium</td><td>Medium</td><td>2026-07-15</td></tr>
+      <tr><td><a href="#D-02"><code>D-02</code></a></td><td>Login and Registration forms are entirely in English regardless of locale</td><td>High</td><td>High</td><td>2026-07-15</td></tr>
+      <tr><td><a href="#D-03"><code>D-03</code></a></td><td>German home page has extensive untranslated Spanish content</td><td>High</td><td>High</td><td>2026-07-15</td></tr>
+      <tr><td><a href="#D-04"><code>D-04</code></a></td><td>Logo image alt text is permanently in Spanish</td><td>Low</td><td>Low</td><td>2026-07-15</td></tr>
+      <tr><td><a href="#D-05"><code>D-05</code></a></td><td>Footer copyright text is permanently in Spanish</td><td>Low</td><td>Low</td><td>2026-07-15</td></tr>
+      <tr><td><a href="#D-06"><code>D-06</code></a></td><td>Feature-section image alt texts are permanently in Spanish</td><td>Low</td><td>Low</td><td>2026-07-15</td></tr>
+      <tr><td><a href="#D-07"><code>D-07</code></a></td><td>Payments page date format isn't localized on German</td><td>Low</td><td>Low</td><td>2026-07-15</td></tr>
+      <tr><td><a href="#D-08"><code>D-08</code></a></td><td>Payments page decimal separator isn't localized on Spanish</td><td>Low</td><td>Low</td><td>2026-07-15</td></tr>
+      <tr><td><a href="#D-09"><code>D-09</code></a></td><td>Payments page price-unit suffixes stay in Spanish on English and German</td><td>Low-Medium</td><td>Medium</td><td>2026-07-15</td></tr>
+      <tr><td><a href="#D-10"><code>D-10</code></a></td><td>Below-Market page isn't localized on English or German</td><td>Medium</td><td>Medium</td><td>2026-07-15</td></tr>
+      <tr><td><a href="#D-11"><code>D-11</code></a></td><td>Analytics page triggers repeated console resource-load errors</td><td>Low</td><td>Low</td><td>2026-07-15</td></tr>
+      <tr><td><a href="#D-12"><code>D-12</code></a></td><td>Terms of Service requires authentication</td><td>High</td><td>High</td><td>2026-07-15</td></tr>
+      <tr><td><a href="#D-13"><code>D-13</code></a></td><td>Favorites badge count doesn't update live after removing a favorite</td><td>Low</td><td>Low</td><td>2026-07-15</td></tr>
+      <tr><td><a href="#D-14"><code>D-14</code></a></td><td>Payment-method selection shows a Spanish plan label on the English payments page</td><td>Low</td><td>Low</td><td>2026-07-15</td></tr>
+    </table>
+
+    <div class="defect-card sev-medium" id="D-01"><h4>D-01 — Favorites-Count API Throws a Client-Side Error for Unauthenticated Users</h4><div class="sev-row"><span class="pill sev-medium">Severity: Medium</span><span class="pill sev-medium">Priority: Medium</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd>All public pages, all locales, unauthenticated</dd><dt>Steps</dt><dd>Load any page in a logged-out session, open the browser console</dd><dt>Expected</dt><dd>The favorites-count endpoint returns valid data, or the client skips the call while unauthenticated</dd><dt>Actual</dt><dd>The endpoint returns an HTML login-redirect page instead of JSON; the client attempts to parse it as JSON and throws a syntax error.</dd></dl></div>
+
+    <div class="defect-card sev-high" id="D-02"><h4>D-02 — Login and Registration Forms Are Entirely in English Regardless of Locale</h4><div class="sev-row"><span class="pill sev-high">Severity: High</span><span class="pill sev-high">Priority: High</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd><code>/login</code>, <code>/register</code>, Spanish and German locales</dd><dt>Steps</dt><dd>Navigate to either form under the Spanish or German locale; observe the heading, labels, button, and links</dd><dt>Expected</dt><dd>Form content matches the locale, consistent with the correctly-localized nav bar</dd><dt>Actual</dt><dd>The nav bar reads correctly, but the form itself always shows English text — heading, labels, button, and links.</dd></dl></div>
+
+    <div class="defect-card sev-high" id="D-03"><h4>D-03 — German Home Page Has Extensive Untranslated Spanish Content</h4><div class="sev-row"><span class="pill sev-high">Severity: High</span><span class="pill sev-high">Priority: High</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd>Home page, German locale</dd><dt>Steps</dt><dd>Load the German home page; read the audience cards, calculator breakdown, and success-stories section</dd><dt>Expected</dt><dd>All visible text in German</dd><dt>Actual</dt><dd>The audience cards, calculator breakdown, and success-stories section all remain in Spanish.</dd></dl></div>
+
+    <div class="defect-card sev-low" id="D-04"><h4>D-04 — Logo Image Alt Text Is Permanently in Spanish</h4><div class="sev-row"><span class="pill sev-low">Severity: Low</span><span class="pill sev-low">Priority: Low</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd>All pages, all locales</dd><dt>Actual</dt><dd>The logo's alt text always reads the same Spanish string regardless of the active locale.</dd></dl></div>
+
+    <div class="defect-card sev-low" id="D-05"><h4>D-05 — Footer Copyright Text Is Permanently in Spanish</h4><div class="sev-row"><span class="pill sev-low">Severity: Low</span><span class="pill sev-low">Priority: Low</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd>All pages, English and German locales</dd><dt>Actual</dt><dd>The footer copyright line stays in Spanish on both English and German.</dd></dl></div>
+
+    <div class="defect-card sev-low" id="D-06"><h4>D-06 — Feature-Section Image Alt Texts Are Permanently in Spanish</h4><div class="sev-row"><span class="pill sev-low">Severity: Low</span><span class="pill sev-low">Priority: Low</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd>Home page, English and German locales</dd><dt>Actual</dt><dd>The six feature-section images' alt text stays in Spanish on both English and German (e.g. "Panel de Ofertas", "Analítica de Beneficios").</dd></dl></div>
+
+    <div class="defect-card sev-low" id="D-07"><h4>D-07 — Payments Page Date Format Isn't Localized on German</h4><div class="sev-row"><span class="pill sev-low">Severity: Low</span><span class="pill sev-low">Priority: Low</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd><code>/pagos</code>, German locale, authenticated</dd><dt>Expected</dt><dd>Expiry date renders as DD.MM.YYYY (German convention)</dd><dt>Actual</dt><dd>Renders as DD/MM/YYYY — the same slash format used on Spanish and English.</dd></dl></div>
+
+    <div class="defect-card sev-low" id="D-08"><h4>D-08 — Payments Page Decimal Separator Isn't Localized on Spanish</h4><div class="sev-row"><span class="pill sev-low">Severity: Low</span><span class="pill sev-low">Priority: Low</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd><code>/pagos</code>, Spanish locale, authenticated</dd><dt>Expected</dt><dd>Prices render with a comma decimal separator (e.g. "€2,99")</dd><dt>Actual</dt><dd>Prices render with a period ("€2.99", "€11.99", "€99.99").</dd></dl></div>
+
+    <div class="defect-card sev-medium" id="D-09"><h4>D-09 — Payments Page Price-Unit Suffixes Stay in Spanish on English and German</h4><div class="sev-row"><span class="pill sev-medium">Severity: Low-Medium</span><span class="pill sev-medium">Priority: Medium</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd><code>/pagos</code>, English and German locales, authenticated</dd><dt>Expected</dt><dd>Suffixes match the locale (EN: "/day"; DE: "/Tag"), matching the correctly-localized plan names</dd><dt>Actual</dt><dd>Plan names localize correctly, but the unit suffix next to each price stays Spanish on both locales ("/día", "/mes", "/año").</dd></dl></div>
+
+    <div class="defect-card sev-medium" id="D-10"><h4>D-10 — Below-Market Page Isn't Localized on English or German</h4><div class="sev-row"><span class="pill sev-medium">Severity: Medium</span><span class="pill sev-medium">Priority: Medium</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd><code>/below-market</code>, authenticated, English and German locales</dd><dt>Steps</dt><dd>Log in, navigate to Below-Market with English or German selected</dd><dt>Expected</dt><dd>Page title, heading, and all labels render in the active locale</dd><dt>Actual</dt><dd>Page title, heading, and all labels are in Spanish on both English and German.</dd></dl></div>
+
+    <div class="defect-card sev-low" id="D-11"><h4>D-11 — Analytics Page Triggers Repeated Console Resource-Load Errors</h4><div class="sev-row"><span class="pill sev-low">Severity: Low</span><span class="pill sev-low">Priority: Low</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd><code>/stats/profit</code>, authenticated</dd><dt>Steps</dt><dd>Log in, open Analytics, open the browser console</dd><dt>Expected</dt><dd>No repeated resource-load failures</dd><dt>Actual</dt><dd>12-13 "Failed to load resource" errors log within seconds of page load, consistent with references to offers whose availability changes over time.</dd></dl></div>
+
+    <div class="defect-card sev-high" id="D-12"><h4>D-12 — Terms of Service Requires Authentication</h4><div class="sev-row"><span class="pill sev-high">Severity: High</span><span class="pill sev-high">Priority: High</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd><code>/terms-of-service</code>, all locales</dd><dt>Steps</dt><dd>In a logged-out session, navigate directly to the page, or click its link in the public home page footer</dd><dt>Expected</dt><dd>The page renders publicly — this is a legal/compliance page, not a product feature</dd><dt>Actual</dt><dd>Both paths redirect to the login page, on all three locales. Renders correctly once authenticated.</dd></dl></div>
+
+    <div class="defect-card sev-low" id="D-13"><h4>D-13 — Favorites Badge Count Doesn't Update Live After Removing a Favorite</h4><div class="sev-row"><span class="pill sev-low">Severity: Low</span><span class="pill sev-low">Priority: Low</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd><code>/favorites</code>, authenticated</dd><dt>Steps</dt><dd>Remove a favorite, confirm the dialog, observe the nav badge without reloading</dd><dt>Expected</dt><dd>The badge reflects the new count immediately</dd><dt>Actual</dt><dd>The badge stays at the pre-removal count for several seconds; a full reload shows the correct count. The removal itself is saved correctly — only the live display is stale.</dd></dl></div>
+
+    <div class="defect-card sev-low" id="D-14"><h4>D-14 — Payment-Method Selection Shows a Spanish Plan Label on the English Payments Page</h4><div class="sev-row"><span class="pill sev-low">Severity: Low</span><span class="pill sev-low">Priority: Low</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd><code>/pagos</code>, English locale, authenticated</dd><dt>Steps</dt><dd>Open Payments with English selected, click "Select Plan" on any plan card</dd><dt>Expected</dt><dd>The payment-method step shows the plan name in English, matching the plan card it was selected from</dd><dt>Actual</dt><dd>The payment-method step reads "Selected Plan: Diario - €2.99/día" — the Spanish plan name and suffix, even though the plan card itself correctly read "Daily."</dd></dl></div>
+  </section>
+
+  <section id="traceability">
+    <h2>5. Test-Artifact Traceability Index</h2>
+    <p style="color:var(--text-muted); font-size:0.9rem;">Full test case text, technique, preconditions, steps, and expected/actual results live in <code>i18n_test_cases_2026-07-12.md</code> and <code>test_cases_2026-07-15.md</code>. This index maps each feature area to its condition and case IDs only.</p>
+    <table class="trace">
+      <tr><th>Feature</th><th>Test Conditions</th><th>Test Cases</th></tr>
+      <tr><td>Home / Landing Page localization</td><td><code>TCOND-03</code></td><td><code>TC-HOME-001</code></td></tr>
+      <tr><td>Registration &amp; Login</td><td><code>TCOND-01, TCOND-02, TCOND-09, TCOND-10, TCOND-12</code></td><td><code>TC-AUTH-001, TC-AUTH-002, TC-AUTH-003, TC-AUTH-004, TC-AUTH-005, TC-AUTH-007</code></td></tr>
+      <tr><td>Logout</td><td><code>TCOND-11</code></td><td><code>TC-AUTH-006</code></td></tr>
+      <tr><td>Favorites-count API error handling</td><td><code>TCOND-04</code></td><td><code>TC-API-001</code></td></tr>
+      <tr><td>Branding (logo/footer/feature-image alt text)</td><td><code>TCOND-05</code></td><td><code>TC-BRAND-001</code></td></tr>
+      <tr><td>Payments — date/decimal/unit-suffix formatting</td><td><code>TCOND-06, TCOND-07, TCOND-08, TCOND-16</code></td><td><code>TC-PAY-001, TC-PAY-002, TC-PAY-003, TC-PAY-004</code></td></tr>
+      <tr><td>Analytics page</td><td><code>TCOND-13, TCOND-15</code></td><td><code>TC-STATS-001, TC-STATS-002</code></td></tr>
+      <tr><td>Below-Market page localization</td><td><code>TCOND-14</code></td><td><code>TC-MARKET-001</code></td></tr>
+      <tr><td>Offers Dashboard</td><td><code>TCOND-15</code></td><td><code>TC-OFFERS-001</code></td></tr>
+      <tr><td>Interactive Map</td><td><code>TCOND-15</code></td><td><code>TC-MAP-001</code></td></tr>
+      <tr><td>Top Sales</td><td><code>TCOND-15</code></td><td><code>TC-TOPSALES-001</code></td></tr>
+      <tr><td>Notifications</td><td><code>TCOND-15</code></td><td><code>TC-NOTIF-001</code></td></tr>
+      <tr><td>Favorites (content &amp; badge)</td><td><code>TCOND-15, TCOND-19</code></td><td><code>TC-FAV-001, TC-FAV-002</code></td></tr>
+      <tr><td>Terms of Service accessibility</td><td><code>TCOND-17</code></td><td><code>TC-TOS-001</code></td></tr>
+      <tr><td>Unauthenticated route protection</td><td><code>TCOND-18</code></td><td><code>TC-SEC-001</code></td></tr>
+      <tr><td>Payment-method plan-label localization (<a href="#D-14">D-14</a>)</td><td>—</td><td>Not yet formalized</td></tr>
+    </table>
+  </section>
+
+  <section id="regression">
+    <h2>6. Regression Impact</h2>
+    <p>Most defects sit in shared, site-wide components — translation resolution, the shared auth-form component, the shared payments-formatting utility, the shared branding partial — rather than isolated pages, so fixes should be added to the permanent regression suite rather than treated as one-offs. The auth-form and branding-partial fixes touch code paths rendered on every page load across all locales; the payments-formatting fix touches a shared currency/date utility worth checking for other call sites (invoices, plan comparisons) beyond the pages tested here.</p>
+    <p>Four areas are newly covered by this report and should be added to the regression suite once addressed: the Below-Market localization gap (<a href="#D-10">D-10</a>), the Analytics page's resource-loading behavior (<a href="#D-11">D-11</a>), the Favorites-badge live-update gap (<a href="#D-13">D-13</a>), and — highest priority, given it's a compliance-relevant public page — Terms of Service route protection (<a href="#D-12">D-12</a>). <a href="#D-14">D-14</a> (payment-method plan-label localization) is newly discovered and does not yet have a formalized test case.</p>
+  </section>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formalized Test Cases — autocompraventaia.es Full-Site Walkthrough</title>
+<style>
+  :root {
+    --bg: #f7f8fa; --panel: #ffffff; --text: #1f2430; --text-muted: #5b6472; --border: #e2e5ea;
+    --accent: #2f6fed; --pass: #1a8f5e; --pass-bg: #e6f6ee; --fail: #c92a2a; --fail-bg: #fdeaea;
+    --partial: #b06a00; --partial-bg: #fdf2df; --skip: #6b7280; --skip-bg: #eef0f2; --code-bg: #eef1f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14161c; --panel: #1c1f27; --text: #e7e9ee; --text-muted: #9aa2b1; --border: #2c303a;
+      --accent: #6d9bff; --pass: #3ecf8e; --pass-bg: #133226; --fail: #ff6b6b; --fail-bg: #3a1c1c;
+      --partial: #f0a94e; --partial-bg: #3a2a12; --skip: #8b93a2; --skip-bg: #23262e; --code-bg: #22252d; }
+  }
+  :root[data-theme="dark"] { --bg: #14161c; --panel: #1c1f27; --text: #e7e9ee; --text-muted: #9aa2b1; --border: #2c303a;
+    --accent: #6d9bff; --pass: #3ecf8e; --pass-bg: #133226; --fail: #ff6b6b; --fail-bg: #3a1c1c;
+    --partial: #f0a94e; --partial-bg: #3a2a12; --skip: #8b93a2; --skip-bg: #23262e; --code-bg: #22252d; }
+  :root[data-theme="light"] { --bg: #f7f8fa; --panel: #ffffff; --text: #1f2430; --text-muted: #5b6472; --border: #e2e5ea;
+    --accent: #2f6fed; --pass: #1a8f5e; --pass-bg: #e6f6ee; --fail: #c92a2a; --fail-bg: #fdeaea;
+    --partial: #b06a00; --partial-bg: #fdf2df; --skip: #6b7280; --skip-bg: #eef0f2; --code-bg: #eef1f6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 32px 20px 80px; }
+  header.doc-header { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; }
+  header.doc-header h1 { margin: 0 0 6px; font-size: 1.4rem; }
+  header.doc-header .subtitle { color: var(--text-muted); margin-bottom: 4px; font-size: 0.92rem; }
+  nav.toc { position: sticky; top: 12px; z-index: 5; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.88rem; }
+  nav.toc a { color: var(--accent); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  section { margin-bottom: 36px; }
+  section > h2 { font-size: 1.1rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; margin-bottom: 14px; scroll-margin-top: 60px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.86em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  ul.plain, ol.plain { margin: 6px 0; padding-left: 20px; font-size: 0.93rem; }
+  table.data { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
+  table.data th, table.data td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 0.88rem; text-align: left; vertical-align: top; word-break: break-word; }
+  table.data th { background: var(--code-bg); color: var(--text-muted); text-transform: uppercase; font-size: 0.74rem; letter-spacing: 0.02em; white-space: nowrap; }
+  table.data tr:last-child td { border-bottom: none; }
+  table.data tr:hover td { background: var(--code-bg); }
+
+  .tc-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; margin-bottom: 14px; scroll-margin-top: 60px; border-left: 5px solid var(--skip); }
+  .tc-card.status-pass { border-left-color: var(--pass); }
+  .tc-card.status-fail { border-left-color: var(--fail); }
+  .tc-card .tc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  .tc-card .tc-id { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; color: var(--accent); font-size: 0.95rem; }
+  .tc-card .tc-title { font-weight: 600; font-size: 0.98rem; }
+  .status-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; }
+  .status-pill.pass { background: var(--pass-bg); color: var(--pass); }
+  .status-pill.fail { background: var(--fail-bg); color: var(--fail); }
+  .tc-meta { display: flex; flex-wrap: wrap; gap: 5px 16px; font-size: 0.82rem; color: var(--text-muted); margin: 6px 0 12px; }
+  .tc-meta b { color: var(--text); font-weight: 600; }
+  .tc-section { margin-top: 10px; }
+  .tc-section h5 { margin: 0 0 4px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
+  .tc-section p, .tc-section ul { margin: 2px 0; font-size: 0.92rem; }
+  .tc-section ul { padding-left: 20px; }
+  .tc-status-line { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 0.86rem; color: var(--text-muted); }
+
+  .risk-card, .cond-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; margin-bottom: 8px; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="doc-header">
+    <h1>Formalized Test Cases — autocompraventaia.es Full-Site Walkthrough</h1>
+    <div class="subtitle">Locales: English, Spanish, German &middot; Session: 2026-07-15</div>
+    <div class="subtitle">Extends <code>i18n_test_cases_2026-07-12.md</code> — TC-AUTH-001/002, TC-HOME-001, TC-API-001, TC-BRAND-001, and TC-PAY-001/002/003 are carried forward unchanged there and not re-listed here.</div>
+  </header>
+
+  <nav class="toc">
+    <a href="#summary">1. Summary</a>
+    <a href="#risks">2. Risks</a>
+    <a href="#conditions">3. Test Conditions</a>
+    <a href="#cases">4. Test Cases</a>
+    <a href="#automation">5. Automation</a>
+    <a href="#regression">6. Regression Impact</a>
+  </nav>
+
+  <section id="summary">
+    <h2>1. Summary</h2>
+    <p style="font-size:0.93rem;">Full-site coverage (all major workflows), English/Spanish/German locales only. 19 flows were walked; 13 defects are tracked against this site — 9 carried forward from 2026-07-12 (7 re-confirmed present, 2 not re-checked this session) and 4 newly discovered.</p>
+    <p style="font-size:0.9rem; color:var(--text-muted);"><b>Assumptions:</b> pages that consistently redirect an unauthenticated visitor to login (Offers, Map, Top Sales, Below-Market, Payments) are treated as intentionally gated paid/account features, not defects. The 11 favorites pre-loaded on every fresh trial account are confirmed identical sample/demo data, not user-specific data.</p>
+    <p style="font-size:0.9rem; color:var(--text-muted);"><b>Open ambiguities:</b> whether the below-market page is intentionally Spanish-only or should receive full EN/DE localization; whether the repeated 410/404 resource errors on Analytics reflect expected data lifecycle or a backend cleanup gap; whether Terms of Service is deliberately restricted to logged-in users.</p>
+  </section>
+
+  <section id="risks">
+    <h2>2. Risks and Traceability</h2>
+    <table class="data">
+      <tr><th>Risk</th><th>Description</th><th>Likelihood</th><th>Impact</th><th>Conditions</th></tr>
+      <tr><td><code>R-FUNC-01</code></td><td>Core paid-product workflows (dashboard, map, analytics, favorites, notifications, payments) stop working, undermining the product's primary value proposition</td><td>Low</td><td>High</td><td><code>TCOND-09..16</code></td></tr>
+      <tr><td><code>R-ACC-01</code></td><td>A public legal page (Terms of Service) is unreachable by non-customers — a UX dead-end from the footer and a possible compliance exposure</td><td>High</td><td>Medium-High</td><td><code>TCOND-17</code></td></tr>
+      <tr><td><code>R-LOC-05</code></td><td>Below-market page shows no locale support at all for EN/DE visitors, unlike the rest of the authenticated dashboard</td><td>High</td><td>Medium</td><td><code>TCOND-14</code></td></tr>
+      <tr><td><code>R-DATA-01</code></td><td>Analytics page repeatedly fails to load backend resources, suggesting stale references to removed offers</td><td>High</td><td>Low</td><td><code>TCOND-13</code></td></tr>
+      <tr><td><code>R-SEC-01</code></td><td>Protected routes could be reachable without authentication, exposing paid data to anonymous users</td><td>Low</td><td>High if regressed</td><td><code>TCOND-18</code></td></tr>
+    </table>
+    <p style="font-size:0.85rem; color:var(--text-muted);"><code>R-LOC-01..04</code> and <code>R-API-01</code> from the 2026-07-12 document still apply unchanged.</p>
+  </section>
+
+  <section id="conditions">
+    <h2>3. Test Conditions</h2>
+    <table class="data">
+      <tr><th>ID</th><th>Condition</th><th>Traces to</th></tr>
+      <tr><td><code>TCOND-09</code></td><td>New-user registration (email/password) must succeed and grant dashboard access with an active trial</td><td><code>R-FUNC-01</code></td></tr>
+      <tr><td><code>TCOND-10</code></td><td>Login must succeed for valid credentials and fail safely for invalid ones</td><td><code>R-FUNC-01</code></td></tr>
+      <tr><td><code>TCOND-11</code></td><td>Logout must end the session and prevent further access to authenticated pages</td><td><code>R-FUNC-01</code></td></tr>
+      <tr><td><code>TCOND-12</code></td><td>"Continue with Google" entry points must be present and route to the OAuth connector on both register and login</td><td><code>R-FUNC-01</code></td></tr>
+      <tr><td><code>TCOND-13</code></td><td>Analytics page must load without repeated resource-load failures</td><td><code>R-DATA-01</code></td></tr>
+      <tr><td><code>TCOND-14</code></td><td>Below-market page content must render in the site's active locale</td><td><code>R-LOC-05</code></td></tr>
+      <tr><td><code>TCOND-15</code></td><td>Offers Dashboard, Interactive Map, Top Sales, Notifications, and Favorites must each render their core content for an authenticated user</td><td><code>R-FUNC-01</code></td></tr>
+      <tr><td><code>TCOND-16</code></td><td>Payments page must display all three subscription plans with correct pricing and an active-subscription banner reflecting the real trial expiry</td><td><code>R-FUNC-01</code></td></tr>
+      <tr><td><code>TCOND-17</code></td><td>Terms of Service must be reachable by an unauthenticated visitor</td><td><code>R-ACC-01</code></td></tr>
+      <tr><td><code>TCOND-18</code></td><td>Pages that require an active account must redirect an unauthenticated visitor to login rather than exposing content</td><td><code>R-SEC-01</code></td></tr>
+      <tr><td><code>TCOND-19</code></td><td>The favorites-count badge in the nav must reflect the current count immediately after an add/remove action, without requiring a page reload</td><td><code>R-FUNC-01</code></td></tr>
+    </table>
+  </section>
+
+  <section id="cases">
+    <h2>4. Test Cases</h2>
+
+    <div class="tc-card status-pass" id="TC-AUTH-003">
+      <div class="tc-head"><span class="tc-id">TC-AUTH-003</span><span class="status-pill pass">Pass</span></div>
+      <div class="tc-title">New user can register with email/password and reach the dashboard with an active trial</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-09 / R-FUNC-01 (High)</span><span><b>Priority:</b> High</span><span><b>Technique:</b> Use Case Testing + Equivalence Partitioning</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Navigate to Register</li><li>Fill in a valid, unused email and password</li><li>Submit the form</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Redirect to the Offers dashboard; a trial-status indicator appears in the nav; no registration-flow console errors.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Registration succeeded and redirected as expected. The trial badge appeared and correctly counted down across page navigations. No registration-flow console errors (the separately-tracked favorites-count error is unrelated to this flow).</p></div>
+    </div>
+
+    <div class="tc-card status-pass" id="TC-AUTH-004">
+      <div class="tc-head"><span class="tc-id">TC-AUTH-004</span><span class="status-pill pass">Pass</span></div>
+      <div class="tc-title">Registered user can log in with valid email/password credentials</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-10 / R-FUNC-01 (High)</span><span><b>Priority:</b> High</span><span><b>Technique:</b> Use Case Testing</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Navigate to Login</li><li>Enter the valid email and password</li><li>Submit the form</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>User is authenticated and redirected into the dashboard.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Login succeeded and redirected to Offers as expected.</p></div>
+    </div>
+
+    <div class="tc-card status-pass" id="TC-AUTH-005">
+      <div class="tc-head"><span class="tc-id">TC-AUTH-005</span><span class="status-pill pass">Pass (1 new accessibility finding)</span></div>
+      <div class="tc-title">Login form handles invalid input safely (wrong password, empty submit, malformed email)</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-10 / R-FUNC-01 (High)</span><span><b>Priority:</b> Medium</span><span><b>Technique:</b> Error Guessing + Equivalence Partitioning</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Case A: incorrect email/password, submit</li><li>Case B: empty form, submit</li><li>Case C: malformed email (no "@"), submit</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Case A: a clear error, no crash, no access granted. Cases B/C: validation blocks submission with a clear message.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Case A: inline "Invalid credentials." message shown; not exposed via an ARIA <code>alert</code> role (accessibility finding, see the walkthrough report). Case B: browser-native "Please fill out this field." validation appears. Case C: not independently re-tested — inherited pass from the 2026-07-12 session.</p></div>
+    </div>
+
+    <div class="tc-card status-pass" id="TC-AUTH-006">
+      <div class="tc-head"><span class="tc-id">TC-AUTH-006</span><span class="status-pill pass">Pass</span></div>
+      <div class="tc-title">Logged-in user can log out and loses access to authenticated pages</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-11 / R-FUNC-01 (High)</span><span><b>Priority:</b> Medium</span><span><b>Technique:</b> Use Case Testing</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Locate the logout control (icon-only, <code>onclick="handleLogout(event)"</code>)</li><li>Activate it</li><li>Attempt to navigate to an authenticated page</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Session ends; subsequent attempts to reach authenticated pages redirect to login.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Full click-through confirmed: activating the control clears the session cookie, redirects to home, and a subsequent attempt to reach Offers correctly redirects to login.</p></div>
+    </div>
+
+    <div class="tc-card status-pass" id="TC-AUTH-007">
+      <div class="tc-head"><span class="tc-id">TC-AUTH-007</span><span class="status-pill pass">Pass, all 3 locales</span></div>
+      <div class="tc-title">"Continue with Google" entry points exist on both register and login</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-12 / R-FUNC-01 (High)</span><span><b>Priority:</b> Low</span><span><b>Technique:</b> Checklist-Based Testing</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Locate the Google sign-up link on Register (EN/ES/DE)</li><li>Locate the Google sign-in link on Login (EN/ES/DE)</li><li>Inspect each link's destination</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Both links present on all three locales, pointing to the OAuth connector endpoint.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Present on EN, ES, and DE; all point to the Google connector. The OAuth consent flow itself was not exercised — out of scope for disposable test identities.</p></div>
+    </div>
+
+    <div class="tc-card status-pass" id="TC-STATS-001">
+      <div class="tc-head"><span class="tc-id">TC-STATS-001</span><span class="status-pill pass">Pass</span></div>
+      <div class="tc-title">Analytics page renders for an authenticated user</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-15 / R-FUNC-01 (High)</span><span><b>Priority:</b> Medium</span><span><b>Technique:</b> Use Case Testing</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Navigate to Analytics while authenticated</li><li>Observe heading, calendar, and tab set</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Renders with a heading, sales calendar, and multiple analysis tabs.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Heading present; calendar view with per-day profit figures present; seven tabs present (Overview, Trends, Seasonality, Mileage, Liquidity, Risks, Forecast).</p></div>
+    </div>
+
+    <div class="tc-card status-fail" id="TC-STATS-002">
+      <div class="tc-head"><span class="tc-id">TC-STATS-002</span><span class="status-pill fail">Fail — D-11</span></div>
+      <div class="tc-title">Analytics page triggers repeated resource-load failures (410/404) in console</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-13 / R-DATA-01 (Medium)</span><span><b>Priority:</b> Low</span><span><b>Technique:</b> Error Guessing</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Navigate to Analytics while authenticated</li><li>Open the browser console</li><li>Observe errors over the following few seconds</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>No repeated resource-load failures.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>12-13 "Failed to load resource" errors (HTTP 410/404) logged within seconds of page load across two independent runs, consistent with references to offers whose availability changes over time.</p></div>
+    </div>
+
+    <div class="tc-card status-fail" id="TC-MARKET-001">
+      <div class="tc-head"><span class="tc-id">TC-MARKET-001</span><span class="status-pill fail">Fail — D-10</span></div>
+      <div class="tc-title">Below-market page does not localize for EN or DE locale</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-14 / R-LOC-05 (Medium)</span><span><b>Priority:</b> Medium</span><span><b>Technique:</b> Equivalence Partitioning by locale</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Navigate to Below-Market with English selected; observe title/heading/labels</li><li>Repeat with German selected</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Page title, heading, and labels render in the active locale on both EN and DE.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Page title/heading/labels are Spanish on both EN and DE, directly observed (not inferred) across three independently registered accounts.</p></div>
+    </div>
+
+    <div class="tc-card status-pass" id="TC-OFFERS-001">
+      <div class="tc-head"><span class="tc-id">TC-OFFERS-001</span><span class="status-pill pass">Pass</span></div>
+      <div class="tc-title">Offers Dashboard renders for an authenticated user</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-15 / R-FUNC-01 (High)</span><span><b>Priority:</b> Medium</span><span><b>Technique:</b> Use Case Testing</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Navigate to Offers while authenticated</li><li>Observe the listing table and filter controls</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>A filterable table of car listings renders.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Page loads with the dashboard layout and filter controls present; data grid confirmed populated with 123 rows.</p></div>
+    </div>
+
+    <div class="tc-card status-pass" id="TC-MAP-001">
+      <div class="tc-head"><span class="tc-id">TC-MAP-001</span><span class="status-pill pass">Pass</span></div>
+      <div class="tc-title">Interactive Map renders offers for an authenticated user</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-15 / R-FUNC-01 (High)</span><span><b>Priority:</b> Low</span><span><b>Technique:</b> Use Case Testing</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Navigate to Map while authenticated</li><li>Observe the map and markers</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Map renders with geolocated offer markers.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Renders with a large number of geolocated markers, independently confirmed (exact count varies run to run — a live, continuously-updating dataset).</p></div>
+    </div>
+
+    <div class="tc-card status-pass" id="TC-TOPSALES-001">
+      <div class="tc-head"><span class="tc-id">TC-TOPSALES-001</span><span class="status-pill pass">Pass</span></div>
+      <div class="tc-title">Top Sales ranking page renders for an authenticated user</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-15 / R-FUNC-01 (High)</span><span><b>Priority:</b> Low</span><span><b>Technique:</b> Use Case Testing</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Navigate to Top Sales while authenticated</li><li>Observe the ranking table</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>A ranked list of best-selling models renders.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Heading "Best-sellers in Spain" (correctly localized to English), ranking content, and a methodology note all confirmed.</p></div>
+    </div>
+
+    <div class="tc-card status-pass" id="TC-NOTIF-001">
+      <div class="tc-head"><span class="tc-id">TC-NOTIF-001</span><span class="status-pill pass">Pass</span></div>
+      <div class="tc-title">Notifications settings page renders for an authenticated user</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-15 / R-FUNC-01 (High)</span><span><b>Priority:</b> Low</span><span><b>Technique:</b> Use Case Testing</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Navigate to Notifications while authenticated</li><li>Observe settings controls and history table</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Notification channel settings and a history table render.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>"Settings" heading with Telegram/Email options and an empty history table rendered as expected. One minor 404 console error noted, not filed as its own defect.</p></div>
+    </div>
+
+    <div class="tc-card status-pass" id="TC-FAV-001">
+      <div class="tc-head"><span class="tc-id">TC-FAV-001</span><span class="status-pill pass">Pass</span></div>
+      <div class="tc-title">Favorites page renders pre-seeded sample data and shows the badge count in the nav</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-15 / R-FUNC-01 (High)</span><span><b>Priority:</b> Medium</span><span><b>Technique:</b> Use Case Testing + Equivalence Partitioning</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Register a fresh account</li><li>Navigate to Favorites</li><li>Observe the listing and the nav badge</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>A consistent, documented set of sample favorites appears, with the nav badge matching.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Every independently registered account showed the identical 11-car list — confirms shared seed data. Badge briefly shows "0" immediately after registration, then correctly shows "11" on the next navigation (async fetch, not a defect).</p></div>
+    </div>
+
+    <div class="tc-card status-fail" id="TC-FAV-002">
+      <div class="tc-head"><span class="tc-id">TC-FAV-002</span><span class="status-pill fail">Fail — D-13</span></div>
+      <div class="tc-title">Favorites-count badge updates immediately after removing a favorite, without a page reload</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-19 / R-FUNC-01 (High)</span><span><b>Priority:</b> Low</span><span><b>Technique:</b> Use Case Testing (state-change verification)</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Note the badge value on Favorites</li><li>Remove one favorite and accept the confirm dialog</li><li>Observe the badge without reloading</li><li>Reload and observe again</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>The badge updates to the new count promptly, without a reload.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Confirm dialog reads "Delete this car from favorites?" The removal is correctly persisted (10 remaining after reload). The badge, however, stays at the pre-removal value for several seconds on the same page and only updates after a reload.</p></div>
+    </div>
+
+    <div class="tc-card status-pass" id="TC-PAY-004">
+      <div class="tc-head"><span class="tc-id">TC-PAY-004</span><span class="status-pill pass">Pass, all 3 locale headings</span></div>
+      <div class="tc-title">Payments page displays all three subscription plans with correct pricing and an accurate active-subscription banner</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-16 / R-FUNC-01 (High)</span><span><b>Priority:</b> High</span><span><b>Technique:</b> Use Case Testing + Checklist-Based Testing</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Navigate to Payments while authenticated</li><li>Observe the three plan cards and the active-subscription banner</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Daily/Monthly/Yearly plans each show a price and feature list; the banner shows a real expiry matching the account's trial.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Daily €2.99, Monthly €11.99 ("Most Popular"), Yearly €99.99 ("Best Value") all present. Banner correctly reflects the real trial expiry. Page heading localizes correctly on all three locales. Date-format (D-07) and price-suffix (D-09) issues remain on DE; ES is unaffected by either.</p></div>
+    </div>
+
+    <div class="tc-card status-fail" id="TC-TOS-001">
+      <div class="tc-head"><span class="tc-id">TC-TOS-001</span><span class="status-pill fail">Fail — D-12</span></div>
+      <div class="tc-title">Terms of Service is reachable without authentication</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-17 / R-ACC-01 (Medium-High)</span><span><b>Priority:</b> High</span><span><b>Technique:</b> Use Case Testing + Error Guessing</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>In a logged-out session, navigate directly to Terms of Service</li><li>Separately, click its link in the public footer</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>The page renders directly, without requiring login.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Both paths redirect to login. Reproduced on a completely clean browser context and confirmed on all three locale variants. Renders correctly once authenticated.</p></div>
+    </div>
+
+    <div class="tc-card status-pass" id="TC-SEC-001">
+      <div class="tc-head"><span class="tc-id">TC-SEC-001</span><span class="status-pill pass">Pass, full route set confirmed</span></div>
+      <div class="tc-title">Protected routes correctly redirect unauthenticated visitors to login</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-18 / R-SEC-01 (High)</span><span><b>Priority:</b> High</span><span><b>Technique:</b> Error Guessing + Equivalence Partitioning by locale</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>In a logged-out session, attempt each protected route directly (Offers, Map, Top Sales, Below-Market, Favorites, Payments)</li><li>Repeat for all three locales</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Every attempt redirects to login rather than exposing protected content.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Confirmed for all six routes across all three locales — full protected-route set correctly redirects to login. Separately noted: the locale parameter is dropped on every such redirect (see the walkthrough report's findings).</p></div>
+    </div>
+
+  </section>
+
+  <section id="automation">
+    <h2>5. Automation Candidates</h2>
+    <table class="data">
+      <tr><th>Test Case</th><th>Automate?</th><th>Rationale</th></tr>
+      <tr><td><code>TC-AUTH-003, TC-AUTH-004</code></td><td>Yes</td><td>Core registration/login happy paths — high value, stable, cheap to assert.</td></tr>
+      <tr><td><code>TC-AUTH-005</code></td><td>Yes</td><td>Error-handling assertions are stable, deterministic locator/text checks.</td></tr>
+      <tr><td><code>TC-AUTH-006</code></td><td>Yes</td><td>Full click-through is independently confirmed — a good deterministic regression check.</td></tr>
+      <tr><td><code>TC-AUTH-007</code></td><td>Link-presence only</td><td>Assert the OAuth links exist on all 3 locales — don't automate the consent flow.</td></tr>
+      <tr><td><code>TC-STATS-001, TC-STATS-002</code></td><td>Yes</td><td>Stable structural checks plus a console-error-count assertion.</td></tr>
+      <tr><td><code>TC-MARKET-001</code></td><td>Yes</td><td>Same pattern as the existing localization regression tests.</td></tr>
+      <tr><td><code>TC-OFFERS-001, TC-MAP-001, TC-TOPSALES-001, TC-NOTIF-001</code></td><td>Yes</td><td>14-minute trial-window fixture dependency; content rendering now independently confirmed.</td></tr>
+      <tr><td><code>TC-FAV-001</code></td><td>Yes</td><td>Seed-data consistency is a confirmed, stable regression marker.</td></tr>
+      <tr><td><code>TC-FAV-002</code></td><td>Yes</td><td>Deterministic regression gate for the badge-sync defect (D-13).</td></tr>
+      <tr><td><code>TC-PAY-004</code></td><td>Yes</td><td>Extends the existing payments-formatting regression suite across all 3 locale headings.</td></tr>
+      <tr><td><code>TC-TOS-001</code></td><td>Yes</td><td>High-value regression gate guarding a compliance-relevant page.</td></tr>
+      <tr><td><code>TC-SEC-001</code></td><td>Yes</td><td>Security-relevant gating check across the full protected-route set.</td></tr>
+    </table>
+  </section>
+
+  <section id="regression">
+    <h2>6. Regression Impact</h2>
+    <p style="font-size:0.93rem;"><b>Newly discovered (D-10, D-11, D-12, D-13):</b> sit in previously-untested areas rather than shared components already covered by the existing suite. TC-MARKET-001, TC-STATS-002, TC-TOS-001, and TC-FAV-002 should join the permanent regression suite once addressed.</p>
+    <p style="font-size:0.93rem;"><b>Previously known, re-confirmed present (D-01, D-02, D-03, D-04, D-05, D-07, D-09):</b> no new regression-suite entries needed — already covered from the 2026-07-12 session.</p>
+    <p style="font-size:0.93rem;"><b>Not re-verified this session (D-06, D-08):</b> should be re-checked before their next status update.</p>
+  </section>
+
+</div>
+</body>
+</html>

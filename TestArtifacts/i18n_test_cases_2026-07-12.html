@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formalized Test Cases — autocompraventaia.es Localization</title>
+<style>
+  :root {
+    --bg: #f7f8fa; --panel: #ffffff; --text: #1f2430; --text-muted: #5b6472; --border: #e2e5ea;
+    --accent: #2f6fed; --pass: #1a8f5e; --pass-bg: #e6f6ee; --fail: #c92a2a; --fail-bg: #fdeaea;
+    --partial: #b06a00; --partial-bg: #fdf2df; --skip: #6b7280; --skip-bg: #eef0f2; --code-bg: #eef1f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #14161c; --panel: #1c1f27; --text: #e7e9ee; --text-muted: #9aa2b1; --border: #2c303a;
+      --accent: #6d9bff; --pass: #3ecf8e; --pass-bg: #133226; --fail: #ff6b6b; --fail-bg: #3a1c1c;
+      --partial: #f0a94e; --partial-bg: #3a2a12; --skip: #8b93a2; --skip-bg: #23262e; --code-bg: #22252d; }
+  }
+  :root[data-theme="dark"] { --bg: #14161c; --panel: #1c1f27; --text: #e7e9ee; --text-muted: #9aa2b1; --border: #2c303a;
+    --accent: #6d9bff; --pass: #3ecf8e; --pass-bg: #133226; --fail: #ff6b6b; --fail-bg: #3a1c1c;
+    --partial: #f0a94e; --partial-bg: #3a2a12; --skip: #8b93a2; --skip-bg: #23262e; --code-bg: #22252d; }
+  :root[data-theme="light"] { --bg: #f7f8fa; --panel: #ffffff; --text: #1f2430; --text-muted: #5b6472; --border: #e2e5ea;
+    --accent: #2f6fed; --pass: #1a8f5e; --pass-bg: #e6f6ee; --fail: #c92a2a; --fail-bg: #fdeaea;
+    --partial: #b06a00; --partial-bg: #fdf2df; --skip: #6b7280; --skip-bg: #eef0f2; --code-bg: #eef1f6; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 32px 20px 80px; }
+  header.doc-header { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; }
+  header.doc-header h1 { margin: 0 0 6px; font-size: 1.4rem; }
+  header.doc-header .subtitle { color: var(--text-muted); margin-bottom: 4px; font-size: 0.92rem; }
+  nav.toc { position: sticky; top: 12px; z-index: 5; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.88rem; }
+  nav.toc a { color: var(--accent); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+  section { margin-bottom: 36px; }
+  section > h2 { font-size: 1.1rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; margin-bottom: 14px; scroll-margin-top: 60px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.86em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  ul.plain, ol.plain { margin: 6px 0; padding-left: 20px; font-size: 0.93rem; }
+  table.data { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 8px; }
+  table.data th, table.data td { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 0.88rem; text-align: left; vertical-align: top; word-break: break-word; }
+  table.data th { background: var(--code-bg); color: var(--text-muted); text-transform: uppercase; font-size: 0.74rem; letter-spacing: 0.02em; white-space: nowrap; }
+  table.data tr:last-child td { border-bottom: none; }
+  table.data tr:hover td { background: var(--code-bg); }
+
+  .tc-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; margin-bottom: 14px; scroll-margin-top: 60px; border-left: 5px solid var(--fail); }
+  .tc-card .tc-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  .tc-card .tc-id { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-weight: 700; color: var(--accent); font-size: 0.95rem; }
+  .status-pill { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.74rem; font-weight: 700; }
+  .status-pill.fail { background: var(--fail-bg); color: var(--fail); }
+  .tc-title { font-weight: 600; font-size: 0.98rem; }
+  .tc-meta { display: flex; flex-wrap: wrap; gap: 5px 16px; font-size: 0.82rem; color: var(--text-muted); margin: 6px 0 12px; }
+  .tc-meta b { color: var(--text); font-weight: 600; }
+  .tc-section { margin-top: 10px; }
+  .tc-section h5 { margin: 0 0 4px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
+  .tc-section p, .tc-section ul { margin: 2px 0; font-size: 0.92rem; }
+  .tc-section ul { padding-left: 20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="doc-header">
+    <h1>Formalized Test Cases — autocompraventaia.es Localization</h1>
+    <div class="subtitle">Locales: English, Spanish, German &middot; Session: 2026-07-12</div>
+    <div class="subtitle">Extended by <code>test_cases_2026-07-15.md</code>, which adds full-site coverage beyond localization.</div>
+  </header>
+
+  <nav class="toc">
+    <a href="#summary">1. Summary</a>
+    <a href="#risks">2. Risks</a>
+    <a href="#conditions">3. Test Conditions</a>
+    <a href="#cases">4. Test Cases</a>
+    <a href="#automation">5. Automation</a>
+    <a href="#regression">6. Regression Impact</a>
+  </nav>
+
+  <section id="summary">
+    <h2>1. Summary</h2>
+    <p style="font-size:0.93rem;">7 confirmed defects from a session-based exploratory walkthrough across English, Spanish, and German locales (Landmark, Sabotage, Consistency, and Location tours). All were independently reproduced by re-navigating the live site.</p>
+    <p style="font-size:0.9rem; color:var(--text-muted);"><b>Assumptions:</b> the nav bar / footer link translations (which do work correctly) represent the site's actual localization intent — used as the oracle for correct output where no written spec exists. German date convention (DD.MM.YYYY) and Spanish decimal-comma convention are assumed as the correct target formats. Locale is determined by the <code>?_locale=</code> query parameter.</p>
+    <p style="font-size:0.9rem; color:var(--text-muted);"><b>Open ambiguities:</b> whether the "paid X min" trial-countdown wording is intentional; whether the Stripe-hosted checkout is expected to render in the site's active locale or is accepted as English-only by design.</p>
+  </section>
+
+  <section id="risks">
+    <h2>2. Risks and Traceability</h2>
+    <table class="data">
+      <tr><th>Risk</th><th>Description</th><th>Likelihood</th><th>Impact</th><th>Conditions</th></tr>
+      <tr><td><code>R-LOC-01</code></td><td>Auth funnel (login/register) untranslated — non-English users may abandon signup</td><td>High</td><td>High — blocks the primary conversion funnel</td><td><code>TCOND-01, TCOND-02</code></td></tr>
+      <tr><td><code>R-LOC-02</code></td><td>Primary landing page shows mixed-language content — damages credibility/trust for German visitors</td><td>High</td><td>High — first impression for all new German traffic</td><td><code>TCOND-03</code></td></tr>
+      <tr><td><code>R-API-01</code></td><td>Client throws on unauthenticated API response — console noise, possible downstream state issues</td><td>High</td><td>Medium — no visible breakage yet, but fragile</td><td><code>TCOND-04</code></td></tr>
+      <tr><td><code>R-LOC-03</code></td><td>Site-wide branding elements (logo alt, footer, image alt) stuck in Spanish</td><td>High</td><td>Low — accessibility/SEO impact, not user-blocking</td><td><code>TCOND-05</code></td></tr>
+      <tr><td><code>R-LOC-04</code></td><td>Payment page date/number/unit formatting not locale-aware</td><td>High</td><td>Low-Medium — visible on a trust-sensitive page</td><td><code>TCOND-06, TCOND-07, TCOND-08</code></td></tr>
+    </table>
+  </section>
+
+  <section id="conditions">
+    <h2>3. Test Conditions</h2>
+    <table class="data">
+      <tr><th>ID</th><th>Condition</th><th>Traces to</th></tr>
+      <tr><td><code>TCOND-01</code></td><td>Login form content (heading, labels, button, OAuth link, "already have an account" link) must render in the active locale</td><td><code>D-02, R-LOC-01</code></td></tr>
+      <tr><td><code>TCOND-02</code></td><td>Register form content must render in the active locale</td><td><code>D-02, R-LOC-01</code></td></tr>
+      <tr><td><code>TCOND-03</code></td><td>Home page audience cards, calculator section, and success-stories section must render in the active locale</td><td><code>D-03, R-LOC-02</code></td></tr>
+      <tr><td><code>TCOND-04</code></td><td>Favorites-count endpoint must not cause a client-side exception for unauthenticated users</td><td><code>D-01, R-API-01</code></td></tr>
+      <tr><td><code>TCOND-05</code></td><td>Site-wide branding elements (logo alt text, footer copyright, feature image alt text) must render in the active locale</td><td><code>D-04, D-05, R-LOC-03</code></td></tr>
+      <tr><td><code>TCOND-06</code></td><td>Payments page subscription-expiry date must use the locale-correct date format</td><td><code>D-07, R-LOC-04</code></td></tr>
+      <tr><td><code>TCOND-07</code></td><td>Payments page prices must use the locale-correct decimal separator</td><td><code>D-08, R-LOC-04</code></td></tr>
+      <tr><td><code>TCOND-08</code></td><td>Payments page price-unit suffixes (day/month/year) must match the active locale</td><td><code>D-09, R-LOC-04</code></td></tr>
+    </table>
+  </section>
+
+  <section id="cases">
+    <h2>4. Test Cases</h2>
+
+    <div class="tc-card" id="TC-AUTH-001">
+      <div class="tc-head"><span class="tc-id">TC-AUTH-001</span><span class="status-pill fail">Fail — D-02</span></div>
+      <div class="tc-title">Login form renders in Spanish under ES locale</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-01 / R-LOC-01 (High)</span><span><b>Priority:</b> High</span><span><b>Technique:</b> Equivalence Partitioning (locale classes)</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Navigate to the login page with Spanish selected</li><li>Observe heading, field labels, submit button, OAuth link, "already have an account" link</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Heading "Iniciar sesión"; labels "Correo electrónico"/"Contraseña"; button "Iniciar sesión"; Google link and "already have an account" link in Spanish; nav bar matches Spanish throughout.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Heading, labels, and button all in English ("Please sign in", "Email address", "Password", "Sign in"). Nav bar correctly Spanish, confirming the defect is isolated to the form component.</p></div>
+    </div>
+
+    <div class="tc-card" id="TC-AUTH-002">
+      <div class="tc-head"><span class="tc-id">TC-AUTH-002</span><span class="status-pill fail">Fail — D-02</span></div>
+      <div class="tc-title">Register form renders in German under DE locale</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-02 / R-LOC-01 (High)</span><span><b>Priority:</b> High</span><span><b>Technique:</b> Equivalence Partitioning (locale classes)</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Navigate to the register page with German selected</li><li>Observe heading, field labels, submit button, OAuth link, "already have an account" link</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Heading "Registrieren"; labels "E-Mail-Adresse"/"Passwort"; button "Registrieren"; Google and "already have an account" links in German.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Heading, labels, and button all in English ("Register", "Email address", "Password"). Nav bar correctly German ("Über uns", "Angebote", "Karte").</p></div>
+    </div>
+
+    <div class="tc-card" id="TC-HOME-001">
+      <div class="tc-head"><span class="tc-id">TC-HOME-001</span><span class="status-pill fail">Fail — D-03</span></div>
+      <div class="tc-title">Home page audience/calculator/success-story sections render fully in German under DE locale</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-03 / R-LOC-02 (High)</span><span><b>Priority:</b> High</span><span><b>Technique:</b> Equivalence Partitioning + Checklist-Based Testing</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Navigate to the home page with German selected</li><li>Read the three audience cards</li><li>Read the calculator breakdown section</li><li>Read the success-stories section</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>All text across the three sections is in German — no Spanish strings visible.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Audience cards, calculator breakdown, and the entire success-stories section (heading and per-story labels) remain Spanish. Surrounding sections (nav, hero, feature descriptions, footer links) are correctly German.</p></div>
+    </div>
+
+    <div class="tc-card" id="TC-API-001">
+      <div class="tc-head"><span class="tc-id">TC-API-001</span><span class="status-pill fail">Fail — D-01</span></div>
+      <div class="tc-title">Favorites-count API does not throw a client-side error for unauthenticated users</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-04 / R-API-01 (Medium)</span><span><b>Priority:</b> Medium</span><span><b>Technique:</b> Error Guessing + Equivalence Partitioning (locale classes)</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Open a clean, logged-out session</li><li>Load the home page under each of the 3 in-scope locales</li><li>Open the browser console; inspect requests to the favorites-count endpoint</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>No console errors on page load; the endpoint returns valid JSON or the client skips the call while unauthenticated.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Console error thrown attempting to parse an HTML login-redirect response as JSON. The endpoint returns a redirect instead of JSON for logged-out visitors; the behavior is locale-independent.</p></div>
+    </div>
+
+    <div class="tc-card" id="TC-BRAND-001">
+      <div class="tc-head"><span class="tc-id">TC-BRAND-001</span><span class="status-pill fail">Fail — D-04, D-05</span></div>
+      <div class="tc-title">Logo alt text, footer copyright, and feature image alt text localize under EN and DE</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-05 / R-LOC-03 (Low)</span><span><b>Priority:</b> Low</span><span><b>Technique:</b> Equivalence Partitioning + Checklist-Based Testing</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Navigate to the home page under English and German</li><li>Inspect the logo's alt attribute</li><li>Read the footer copyright line</li><li>Inspect alt text of the six feature-section images</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Logo alt text, footer copyright, and feature image alt text all match the active locale.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>All three stay in Spanish on both English and German — logo alt text, footer line, and every feature image's alt text.</p></div>
+    </div>
+
+    <div class="tc-card" id="TC-PAY-001">
+      <div class="tc-head"><span class="tc-id">TC-PAY-001</span><span class="status-pill fail">Fail — D-07</span></div>
+      <div class="tc-title">Payments page subscription-expiry date uses DD.MM.YYYY under DE locale</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-06 / R-LOC-04 (Low-Medium)</span><span><b>Priority:</b> Medium</span><span><b>Technique:</b> Equivalence Partitioning by locale</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Register a test account</li><li>Navigate to Payments with German selected</li><li>Read the active-subscription expiry date/time string</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Date renders as DD.MM.YYYY (German convention).</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Date renders as DD/MM/YYYY — the same slash format as Spanish/English.</p></div>
+    </div>
+
+    <div class="tc-card" id="TC-PAY-002">
+      <div class="tc-head"><span class="tc-id">TC-PAY-002</span><span class="status-pill fail">Fail — D-08</span></div>
+      <div class="tc-title">Payments page prices use comma decimal separator under ES locale</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-07 / R-LOC-04 (Low-Medium)</span><span><b>Priority:</b> Low</span><span><b>Technique:</b> Equivalence Partitioning by locale</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Register a test account</li><li>Navigate to Payments with Spanish selected</li><li>Read the three plan prices</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>Prices render with a comma decimal separator (e.g. "€2,99").</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Prices render with a period ("€2.99", "€11.99", "€99.99").</p></div>
+    </div>
+
+    <div class="tc-card" id="TC-PAY-003">
+      <div class="tc-head"><span class="tc-id">TC-PAY-003</span><span class="status-pill fail">Fail — D-09</span></div>
+      <div class="tc-title">Payments page price-unit suffixes match locale under EN and DE</div>
+      <div class="tc-meta"><span><b>Traces to:</b> TCOND-08 / R-LOC-04 (Low-Medium)</span><span><b>Priority:</b> Low</span><span><b>Technique:</b> Equivalence Partitioning + Checklist-Based Testing</span></div>
+      <div class="tc-section"><h5>Steps</h5><ol class="plain"><li>Register a test account</li><li>Navigate to Payments with English, then German, selected</li><li>Read the unit suffix next to each plan's price</li></ol></div>
+      <div class="tc-section"><h5>Expected</h5><p>EN: "/day", "/month", "/year". DE: "/Tag", "/Monat", "/Jahr" — matching the correctly-localized plan names.</p></div>
+      <div class="tc-section"><h5>Actual</h5><p>Plan names localize correctly ("Daily"/"Täglich" etc.), but the suffix stays Spanish on both locales: "/día", "/mes", "/año" — a mixed-language price line.</p></div>
+    </div>
+
+  </section>
+
+  <section id="automation">
+    <h2>5. Automation Candidates</h2>
+    <table class="data">
+      <tr><th>Test Case</th><th>Automate?</th><th>Rationale</th></tr>
+      <tr><td><code>TC-AUTH-001, TC-AUTH-002</code></td><td>Yes</td><td>Stable DOM targets, high-value (core funnel), cheap to assert via locator text match per locale.</td></tr>
+      <tr><td><code>TC-HOME-001</code></td><td>Yes, partially</td><td>The specific Spanish strings are stable regression markers; full translation-quality coverage stays manual/native-review.</td></tr>
+      <tr><td><code>TC-API-001</code></td><td>Yes</td><td>Pure network/console assertion — no visual judgment needed.</td></tr>
+      <tr><td><code>TC-BRAND-001</code></td><td>Yes</td><td>Static attribute/text assertions — low-maintenance, high repeatability.</td></tr>
+      <tr><td><code>TC-PAY-001, TC-PAY-002, TC-PAY-003</code></td><td>Yes, with a fixture caveat</td><td>Requires a fresh registered account per run (14-minute trial window); good regex/format-assertion candidate otherwise.</td></tr>
+    </table>
+  </section>
+
+  <section id="regression">
+    <h2>6. Regression Impact</h2>
+    <p style="font-size:0.93rem;">All defects sit in shared/global components (translation resolution, a shared auth-form component, a shared payments-formatting utility, a shared branding partial) rather than isolated one-off pages. The auth-form and branding-partial fixes touch code paths rendered on every page load across all locales. The payments-formatting fix touches a shared currency/date utility likely reused elsewhere (e.g. plan comparison, invoices) — worth checking for other call sites once fixed.</p>
+  </section>
+
+</div>
+</body>
+</html>
