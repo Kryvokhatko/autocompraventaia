@@ -14,9 +14,7 @@ export abstract class BasePage {
     this.log = createLogger(scope);
   }
 
-  /** Navigate directly via the site's own `?_locale=` convention — the
-   * mechanism confirmed during the exploratory walkthrough (nav bar and
-   * page content both key off this query param). */
+  /** Navigate directly via the site's own `?_locale=` convention. */
   abstract goto(locale: Locale): Promise<void>;
 
   async bodyText(): Promise<string> {

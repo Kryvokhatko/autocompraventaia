@@ -5,10 +5,6 @@
  *   Fatal (aborts execution) > Error (fails the test case) > Warn (unexpected,
  *   non-breaking) > Info (basic execution info) > Debug (failure-investigation
  *   detail) > Trace (finer than Debug).
- *
- * SUT-independent and reusable across any project, imported by fixtures and
- * Page Objects, never by specs directly (specs express intent through Page
- * Objects, not through logging).
  */
 
 export enum LogLevel {
