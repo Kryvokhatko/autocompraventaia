@@ -1,0 +1,2 @@
+[    1006ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://autocompraventaia.es/login:0
+[    1198ms] [ERROR] Error fetching favorites count: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ https://autocompraventaia.es/login:230

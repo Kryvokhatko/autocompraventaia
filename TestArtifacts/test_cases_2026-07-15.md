@@ -2,6 +2,8 @@
 
 Source: session-based exploratory walkthrough, 2026-07-15 (see `qa_walkthrough_report_2026-07-15.md` for the full session report, coverage table, and defect list). Test basis is exploratory coverage of the live site, not a written spec — conditions below trace to session findings and defect IDs, not to requirement IDs. This document extends the 2026-07-12 walkthrough's test-case set (`i18n_test_cases_2026-07-12.md`) — TC-AUTH-001/002, TC-HOME-001, TC-API-001, TC-BRAND-001, and TC-PAY-001/002/003 are carried forward unchanged (still valid, independently re-confirmed as still failing this session) and are not re-listed in full here; refer to the 2026-07-12 document for their complete text.
 
+**Addendum (2026-08-28):** TCOND-20 through TCOND-29, TC-PAY-005 through TC-PAY-014, and risk R-PAY-02 were added from a follow-up exploration scoped specifically to payment-method selection and Stripe Checkout behavior on `/pagos`, extending beyond TC-PAY-004's plan-display check.
+
 ## 1. Summary
 
 Scope this session: full-site coverage (all major workflows), English/Spanish/German locales only. The real constraint is the site's 14-minute free-trial window per account, not a fixed wall-clock session — coverage was completed by chaining multiple fresh registrations, each granting a new 14-minute window, rather than treating any single window as a hard stop. 19 flows were walked; 13 defects are tracked against this site as of this session — 9 carried forward from 2026-07-12 (7 independently re-confirmed present this session, 2 not re-checked this session) and 4 newly discovered.
@@ -24,6 +26,7 @@ Scope this session: full-site coverage (all major workflows), English/Spanish/Ge
 | R-LOC-05 | Below-market page shows no locale support at all (not even partial) for EN visitors, unlike the rest of the authenticated dashboard | High (confirmed) | Medium — visible to every non-Spanish paying customer who uses this specific feature | TCOND-14 |
 | R-DATA-01 | Analytics page repeatedly fails to load backend resources (410/404), suggesting stale references to removed offers | High (confirmed, exact count varies run to run) | Low — no visible breakage, but console noise and possible incomplete chart data | TCOND-13 |
 | R-SEC-01 | Protected routes could be reachable without authentication, exposing paid data to anonymous users | Low (confirmed correctly gated) | High if it ever regressed | TCOND-18 |
+| R-PAY-02 | Stripe Checkout defaults to UAH (plus a stated 4% conversion fee) instead of the EUR price shown on the pricing page for the same plan; the visitor must notice and manually switch currency to pay the displayed price | High (confirmed) | Medium — currency-surprise risk affecting customer trust and possible billing disputes | TCOND-23, TCOND-24 |
 
 *(R-LOC-01..04 and R-API-01 from the 2026-07-12 session still apply unchanged — see that document.)*
 
@@ -42,6 +45,16 @@ Scope this session: full-site coverage (all major workflows), English/Spanish/Ge
 | TCOND-17 | Terms of Service must be reachable by an unauthenticated visitor | R-ACC-01 |
 | TCOND-18 | Pages that require an active account must redirect an unauthenticated visitor to login rather than exposing content | R-SEC-01 |
 | TCOND-19 | The favorites-count badge in the nav must reflect the current count immediately after an add/remove action, without requiring a page reload | R-FUNC-01 |
+| TCOND-20 | Selecting any plan must open a payment-method modal that echoes the selected plan's name and price | R-FUNC-01 |
+| TCOND-21 | Only implemented payment methods (Stripe) must be selectable in the payment-method modal; unimplemented methods (PayPal, Bank Transfer) must be visibly disabled | R-FUNC-01 |
+| TCOND-22 | Selecting Stripe as the payment method must create a checkout session and redirect to a valid Stripe-hosted Checkout page | R-FUNC-01 |
+| TCOND-23 | The currency Stripe Checkout defaults to must match the currency displayed on the site's pricing page for the same plan | R-PAY-02 |
+| TCOND-24 | Switching currency on Stripe Checkout must recalculate the charged amount correctly and update the set of available payment methods accordingly | R-PAY-02 |
+| TCOND-25 | The email pre-filled in Stripe Checkout's contact information must match the authenticated user's account email | R-FUNC-01 |
+| TCOND-26 | The payment-method modal must be dismissible (close control) without creating a checkout session | R-FUNC-01 |
+| TCOND-27 | A successful Stripe payment must activate/extend the user's subscription and update the active-subscription banner accordingly | R-FUNC-01 |
+| TCOND-28 | A declined/failed card at Stripe Checkout must leave the user's subscription state unchanged, with no false "paid" indication | R-FUNC-01 |
+| TCOND-29 | Abandoning the Stripe Checkout flow must not leave a dangling charge or subscription-state change | R-FUNC-01 |
 
 ## 4. Test Cases
 
@@ -426,6 +439,241 @@ Author:        QA walkthrough session   Reviewed by: —
 ```
 
 ```
+ID:            TC-PAY-005
+Title:         Payment-method modal echoes the selected plan's name and price
+Traceability:  TCOND-20; Risk: R-FUNC-01 (High)
+Priority:      Medium
+Technique:     Use Case Testing + Checklist-Based Testing (per-plan modal content)
+Preconditions: - User is logged in with an active trial
+Test data:     n/a
+
+Steps:
+  1. Navigate to /pagos while authenticated
+  2. Click "Select Plan" on the Daily plan
+  3. Observe the modal's plan-name and price text
+
+Expected result:
+  - Modal header reads "Select Payment Method" and the selected-plan line shows the correct plan name and price
+
+Actual result observed in this session:
+  - Confirmed for the Daily plan — modal displayed "Selected Plan: Diario - €2.99/día", matching the plan card. Monthly and Yearly were not independently re-verified this session.
+
+Status:        Pass (Daily plan verified; Monthly/Yearly not yet re-verified)
+Author:        QA payment-flow session   Reviewed by: —
+```
+
+```
+ID:            TC-PAY-006
+Title:         Payment-method modal only allows selecting implemented methods (Stripe); PayPal and Bank Transfer are visibly disabled
+Traceability:  TCOND-21; Risk: R-FUNC-01 (High)
+Priority:      Medium
+Technique:     Equivalence Partitioning (available vs. unavailable payment method classes)
+Preconditions: - Payment-method modal is open (see TC-PAY-005)
+Test data:     n/a
+
+Steps:
+  1. With the payment-method modal open, observe all three method options
+  2. Attempt to interact with the PayPal and Bank Transfer options
+
+Expected result:
+  - Stripe is clickable; PayPal and Bank Transfer show a "Coming soon" label and are not interactive
+
+Actual result observed in this session:
+  - Confirmed — the Stripe option was clickable and entered a loading state on click; PayPal and Bank Transfer both showed "Coming soon" labels with no click handler
+
+Status:        Pass
+Author:        QA payment-flow session   Reviewed by: —
+```
+
+```
+ID:            TC-PAY-007
+Title:         Selecting Stripe creates a checkout session and redirects to a valid Stripe-hosted Checkout page
+Traceability:  TCOND-22; Risk: R-FUNC-01 (High)
+Priority:      High
+Technique:     Use Case Testing
+Preconditions: - Payment-method modal is open, Stripe selected
+Test data:     n/a
+
+Steps:
+  1. Click the Stripe option in the payment-method modal
+  2. Observe the resulting network request(s) and page
+
+Expected result:
+  - A checkout-session-creation request succeeds and the browser is redirected to a checkout.stripe.com URL scoped to that session
+
+Actual result observed in this session:
+  - Confirmed — clicking Stripe triggered `POST /api/payments/create-link` (200), followed by a redirect to a `checkout.stripe.com/c/pay/cs_...` URL; the Stripe-hosted page rendered with the correct item ("Acceso por 1 día") and merchant name ("Auto CompraVenta IA")
+  - Note: the checkout session observed used LIVE Stripe keys (`cs_live_…` / `pk_live_…`), not test mode — see TC-PAY-012/TC-PAY-013 and the Automation Candidates note below
+
+Status:        Pass
+Author:        QA payment-flow session   Reviewed by: —
+```
+
+```
+ID:            TC-PAY-008
+Title:         Stripe Checkout defaults to UAH rather than the EUR price shown on the site's pricing page
+Traceability:  TCOND-23; Risk: R-PAY-02 (Medium)
+Priority:      Medium
+Technique:     Equivalence Partitioning (locale/currency consistency)
+Preconditions: - Reached Stripe Checkout via TC-PAY-007 for the Daily plan (site showed €2.99)
+Test data:     n/a
+
+Steps:
+  1. On the Stripe Checkout page, observe the default selected currency and charged amount
+  2. Compare against the price shown on the site's pricing page for the same plan
+
+Expected result:
+  - Ambiguous from what's observable on-site: unclear whether Checkout should default to EUR to match the displayed price, or a UAH default is an intentional business decision — flagged for stakeholder input, not asserted as a fixed expectation
+
+Actual result observed in this session:
+  - Checkout defaulted to UAH (159.00 on one run, 161.40 on another — value fluctuates, consistent with a live conversion rate) with a note "1 EUR ≈ [rate] UAH (includes 4% conversion fee)"
+  - A currency selector let the visitor switch to €2.99, matching the site's displayed price
+
+Status:        Ambiguity flagged — not filed as a defect (a working currency selector exists), but a UX/trust risk since the default requires the customer to notice and switch currency themselves; needs a stakeholder answer on intended default
+Author:        QA payment-flow session   Reviewed by: —
+```
+
+```
+ID:            TC-PAY-009
+Title:         Switching currency on Stripe Checkout recalculates the amount and updates available payment methods
+Traceability:  TCOND-24; Risk: R-PAY-02 (Medium)
+Priority:      Low
+Technique:     Decision Table (currency × payment-method availability)
+Preconditions: - On the Stripe Checkout page (see TC-PAY-007)
+Test data:     Currencies: UAH, EUR
+
+Steps:
+  1. With UAH selected, note the charged amount and the list of visible payment-method buttons (e.g. Apple Pay)
+  2. Switch currency to EUR
+  3. Note the new charged amount and the list of visible payment-method buttons
+
+Expected result:
+  - Amount updates to match the selected currency's price; the payment-method list may legitimately differ per currency (wallet eligibility is currency/region-dependent)
+
+Actual result observed in this session:
+  - Confirmed — under UAH, the amount showed 161.40 with Apple Pay offered above the card form; after switching to EUR, the amount showed 2.99 and both Apple Pay and Amazon Pay were offered
+
+Status:        Pass (behavior confirmed; not itself a defect — payment-method-by-currency gating is normal Stripe wallet-eligibility behavior — but worth a permanent regression check since it affects what customers can actually pay with)
+Author:        QA payment-flow session   Reviewed by: —
+```
+
+```
+ID:            TC-PAY-010
+Title:         Stripe Checkout's pre-filled email matches the authenticated user's account email
+Traceability:  TCOND-25; Risk: R-FUNC-01 (High)
+Priority:      Medium
+Technique:     Data consistency check (Use Case Testing)
+Preconditions: - Logged in as a known account; reached Stripe Checkout via TC-PAY-007
+Test data:     The account's registered email
+
+Steps:
+  1. Note the email used to register/log in
+  2. On the Stripe Checkout page, observe the "Contact information → Email" field
+  3. Compare the two values
+
+Expected result:
+  - The two values match exactly
+
+Actual result observed in this session:
+  - Confirmed — Checkout's Email field showed the same address used to register the session's test account
+
+Status:        Pass
+Author:        QA payment-flow session   Reviewed by: —
+```
+
+```
+ID:            TC-PAY-011
+Title:         Closing the payment-method modal cancels cleanly without creating a checkout session
+Traceability:  TCOND-26; Risk: R-FUNC-01 (High)
+Priority:      Low
+Technique:     State Transition
+Preconditions: - Payment-method modal is open
+Test data:     n/a
+
+Steps:
+  1. Open the payment-method modal for any plan
+  2. Close it via the "Close" control without selecting a payment method
+  3. Observe the page state and confirm no checkout-session request was made
+
+Expected result:
+  - Modal closes, pricing page is unchanged, and no create-link/checkout-session request fires
+
+Actual result observed in this session:
+  - Not executed this session — flagged for the next pass
+
+Status:        Not Executed
+Author:        QA payment-flow session   Reviewed by: —
+```
+
+```
+ID:            TC-PAY-012
+Title:         Successful payment via a Stripe test card activates/extends the subscription
+Traceability:  TCOND-27; Risk: R-FUNC-01 (High)
+Priority:      High
+Technique:     Use Case Testing
+Preconditions: - Stripe test-mode keys/environment (not available on the current live account)
+Test data:     A Stripe test card number (e.g. 4242 4242 4242 4242) — requires test mode
+
+Steps:
+  1. Not executed this session
+
+Expected result:
+  - Payment succeeds, user is returned to the site, and the active-subscription banner updates to reflect the new/extended expiry
+
+Actual result observed in this session:
+  - Not executed — this session's Stripe Checkout used LIVE keys (cs_live_/pk_live_); submitting any card there would produce a real charge. Execution requires Stripe test-mode credentials or explicit authorization for a real, refundable charge.
+
+Status:        Blocked (test-environment constraint, not a product defect)
+Author:        QA payment-flow session   Reviewed by: —
+```
+
+```
+ID:            TC-PAY-013
+Title:         A declined/failed card at Stripe Checkout leaves the subscription state unchanged
+Traceability:  TCOND-28; Risk: R-FUNC-01 (High)
+Priority:      Medium
+Technique:     Error Guessing (decline codes) / Boundary Value Analysis
+Preconditions: - Same as TC-PAY-012
+Test data:     A Stripe test decline card (e.g. 4000 0000 0000 0002) — requires test mode
+
+Steps:
+  1. Not executed this session
+
+Expected result:
+  - Checkout shows a decline error, the user can retry, and no false "paid" state appears on the site afterward
+
+Actual result observed in this session:
+  - Not executed — same live-key constraint as TC-PAY-012
+
+Status:        Blocked (test-environment constraint, not a product defect)
+Author:        QA payment-flow session   Reviewed by: —
+```
+
+```
+ID:            TC-PAY-014
+Title:         Abandoning Stripe Checkout mid-session leaves no dangling subscription/charge state
+Traceability:  TCOND-29; Risk: R-FUNC-01 (High)
+Priority:      Low
+Technique:     State Transition
+Preconditions: - On the Stripe Checkout page (see TC-PAY-007)
+Test data:     n/a
+
+Steps:
+  1. Reach Stripe Checkout without submitting payment
+  2. Navigate back to the site (browser back, or the "Back to Auto CompraVenta IA" link) or close the tab
+  3. Return to /pagos and observe the subscription state
+
+Expected result:
+  - Subscription state is unchanged from before the attempt; no partial/pending charge appears
+
+Actual result observed in this session:
+  - Not executed — the browser was closed directly from the Stripe Checkout page without exercising the back-navigation path
+
+Status:        Not Executed
+Author:        QA payment-flow session   Reviewed by: —
+```
+
+```
 ID:            TC-TOS-001
 Title:         Terms of Service is reachable without authentication
 Traceability:  TCOND-17; Risk: R-ACC-01 (Medium-High)
@@ -489,6 +737,13 @@ Author:        QA walkthrough session   Reviewed by: —
 | TC-FAV-001 | Yes | The seed-data consistency (11 specific cars) is now a confirmed, stable regression marker — worth asserting the count and at least one known car name persist across registrations. |
 | TC-FAV-002 | Yes | Deterministic regression gate for the badge-sync defect (D-13) — remove a favorite, assert the badge updates without a reload. |
 | TC-PAY-004 | Yes | Extends the existing payments-formatting regression suite across all 3 locale headings; pairs well with the existing D-07/D-09 failure assertions. |
+| TC-PAY-005, TC-PAY-006 | Yes | Deterministic modal-content and modal-state checks (plan/price text, Stripe enabled vs. PayPal/Bank Transfer disabled) — cheap locator/text assertions, good smoke coverage for the payment entry point. |
+| TC-PAY-007 | Yes, up to the redirect only | Assert `create-link` succeeds (200) and the browser lands on a `checkout.stripe.com` URL with the expected line item — do not proceed past this point in an automated run (see live-key note below). |
+| TC-PAY-008, TC-PAY-009 | Yes | Currency-default and currency-switch behavior on Stripe's hosted page are stable enough to assert (default currency, amount recalculation, payment-method-list change) without touching the actual card form. |
+| TC-PAY-010 | Yes | Simple, high-value data-integrity check — compare the site's session email against Checkout's pre-filled email field. |
+| TC-PAY-011 | Yes | Deterministic modal-dismissal check (no network side effect) — good candidate once executed at least once manually to confirm expected behavior. |
+| TC-PAY-012, TC-PAY-013 | **No — blocked**, not a manual-vs-automated question | This Stripe Checkout runs on LIVE keys (`cs_live_`/`pk_live_`), not test mode. Do not automate real card submission (success or decline) against this endpoint under any circumstances without Stripe test-mode credentials or explicit, separately confirmed authorization for real refundable charges. Revisit once test-mode keys/staging are available. |
+| TC-PAY-014 | Partially | The site-side back-navigation step is automatable; confirming no dangling Stripe-side session/charge requires Stripe dashboard/API access, which is out of scope for browser-driven automation. |
 | TC-TOS-001 | Yes | High-value regression gate — simple, deterministic (redirect target check), and guards a compliance-relevant page. |
 | TC-SEC-001 | Yes | Security-relevant gating check across the full protected-route set (including `/pagos`) — cheap, deterministic, and exactly the kind of check that should never silently regress. |
 

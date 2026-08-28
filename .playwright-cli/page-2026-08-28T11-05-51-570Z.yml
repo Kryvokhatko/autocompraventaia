@@ -1,0 +1,77 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e3]:
+      - link [ref=e4] [cursor=pointer]:
+        - /url: /
+        - img "Tu asistente para la búsqueda de coches en Alemania (con inteligencia artificial)" [ref=e5]
+      - generic [ref=e6]:
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - link "About Us" [ref=e9] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=e10]:
+            - link "Offers 🇩🇪" [ref=e11] [cursor=pointer]:
+              - /url: /offers
+          - listitem [ref=e12]:
+            - link "Offers 🇪🇸" [ref=e13] [cursor=pointer]:
+              - /url: /below-market
+          - listitem [ref=e14]:
+            - link "Map" [ref=e15] [cursor=pointer]:
+              - /url: /map
+          - listitem [ref=e16]:
+            - link "Top Sales" [ref=e17] [cursor=pointer]:
+              - /url: /top-sales
+          - listitem [ref=e18]:
+            - link "Analytics" [ref=e19] [cursor=pointer]:
+              - /url: /stats/profit
+          - listitem [ref=e20]:
+            - link "Notifications" [ref=e21] [cursor=pointer]:
+              - /url: /notifications
+          - listitem [ref=e22]:
+            - link "Payments" [ref=e23] [cursor=pointer]:
+              - /url: /pagos
+        - generic [ref=e24]:
+          - button " EN" [ref=e26] [cursor=pointer]:
+            - generic [ref=e27]: 
+            - text: EN
+          - link "" [ref=e28] [cursor=pointer]:
+            - /url: /favorites
+          - link "Login" [ref=e30] [cursor=pointer]:
+            - /url: /login
+          - link "Register Now" [ref=e31] [cursor=pointer]:
+            - /url: /register
+  - main [ref=e32]:
+    - generic [ref=e33]:
+      - heading "Please sign in" [level=1] [ref=e34]
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - textbox "Email address" [ref=e37]:
+            - /placeholder: name@example.com
+          - generic: Email address
+        - generic [ref=e38]:
+          - textbox "Password" [ref=e39]
+          - generic: Password
+        - button "Sign in" [ref=e40] [cursor=pointer]
+      - separator [ref=e41]
+      - link "Sign in with Google" [ref=e42] [cursor=pointer]:
+        - /url: /connect/google
+        - img [ref=e43]: 
+        - text: Sign in with Google
+      - link "Create an account" [ref=e46] [cursor=pointer]:
+        - /url: /register
+  - contentinfo [ref=e47]:
+    - generic [ref=e51]:
+      - generic [ref=e52]:
+        - link " @auto_compraventa_ia" [ref=e53] [cursor=pointer]:
+          - /url: https://www.instagram.com/auto_compraventa_ia/
+          - generic [ref=e54]: 
+          - text: "@auto_compraventa_ia"
+        - generic [ref=e55]: "|"
+        - link " autocompraventaia@gmail.com" [ref=e56] [cursor=pointer]:
+          - /url: mailto:autocompraventaia@gmail.com
+          - generic [ref=e57]: 
+          - text: autocompraventaia@gmail.com
+      - generic [ref=e59]:
+        - text: © 2024 Auto compraventa IA. Todos los derechos reservados.
+        - link "Terms of Service" [ref=e60] [cursor=pointer]:
+          - /url: /terms-of-service
