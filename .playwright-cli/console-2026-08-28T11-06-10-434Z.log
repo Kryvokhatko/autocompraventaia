@@ -1,3 +1,0 @@
-[     596ms] [ERROR] Error: <path> attribute d: Expected number, "…-.648 2.574-1.55H8.28v-2.88h7.26…". @ https://autocompraventaia.es/register?_locale=en:287
-[     609ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://autocompraventaia.es/register?_locale=en:0
-[     783ms] [ERROR] Error fetching favorites count: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ https://autocompraventaia.es/register?_locale=en:229

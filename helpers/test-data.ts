@@ -1,4 +1,6 @@
 import { faker } from "@faker-js/faker";
+import fs from "fs";
+import path from "path";
 
 /**
  * Core test data factory — SUT-independent, reusable across projects.
@@ -35,4 +37,33 @@ export function createDisposableAccount(workerIndex = 0): DisposableAccount {
 /** Milliseconds remaining in the 14-minute trial window since registration. */
 export function trialTimeRemainingMs(registeredAt: number): number {
   return TRIAL_WINDOW_MS - (Date.now() - registeredAt);
+}
+
+/**
+ * auth.setup.ts already persists storageState (cookies + localStorage) for
+ * every spec project to reuse — but storageState alone doesn't carry the
+ * account's plaintext email, so a spec file has no way to check the site
+ * echoes it back correctly anywhere (e.g. Stripe Checkout's pre-filled
+ * email — see TC-PAY-010). Persisting the account's identity alongside
+ * storageState, in the same gitignored playwright/.auth/ directory, closes
+ * that gap without changing what any existing spec file reads. Password is
+ * deliberately not included — nothing downstream needs it.
+ */
+export interface RegisteredAccount {
+  email: string;
+  registeredAt: number;
+}
+
+const REGISTERED_ACCOUNT_PATH = path.join("playwright", ".auth", "trial-account.json");
+
+export function persistRegisteredAccount(account: DisposableAccount): void {
+  fs.mkdirSync(path.dirname(REGISTERED_ACCOUNT_PATH), { recursive: true });
+  fs.writeFileSync(
+    REGISTERED_ACCOUNT_PATH,
+    JSON.stringify({ email: account.email, registeredAt: account.registeredAt } satisfies RegisteredAccount)
+  );
+}
+
+export function readRegisteredAccount(): RegisteredAccount {
+  return JSON.parse(fs.readFileSync(REGISTERED_ACCOUNT_PATH, "utf-8"));
 }

@@ -24,6 +24,17 @@
     { "id": "TC-FAV-001", "title": "Favorites page renders pre-seeded sample data and shows the badge count in the nav", "risk": "R-FUNC-01", "priority": "Medium" },
     { "id": "TC-FAV-002", "title": "Favorites-count badge updates immediately after removing a favorite, without a page reload", "risk": "R-FUNC-01", "priority": "Low" },
     { "id": "TC-PAY-004", "title": "Payments page displays all three subscription plans with correct pricing and an accurate active-subscription banner", "risk": "R-FUNC-01", "priority": "High" },
+    { "id": "TC-PAY-005", "title": "Payment-method modal echoes the selected plan's name and price", "risk": "R-FUNC-01", "priority": "Medium" },
+    { "id": "TC-PAY-006", "title": "Payment-method modal only allows selecting implemented methods (Stripe); PayPal and Bank Transfer are visibly disabled", "risk": "R-FUNC-01", "priority": "Medium" },
+    { "id": "TC-PAY-007", "title": "Selecting Stripe creates a checkout session and redirects to a valid Stripe-hosted Checkout page", "risk": "R-FUNC-01", "priority": "High" },
+    { "id": "TC-PAY-008", "title": "Stripe Checkout defaults to UAH rather than the EUR price shown on the site's pricing page", "risk": "R-PAY-02", "priority": "Medium" },
+    { "id": "TC-PAY-009", "title": "Switching currency on Stripe Checkout recalculates the amount and updates available payment methods", "risk": "R-PAY-02", "priority": "Low" },
+    { "id": "TC-PAY-010", "title": "Stripe Checkout's pre-filled email matches the authenticated user's account email", "risk": "R-FUNC-01", "priority": "Medium" },
+    { "id": "TC-PAY-011", "title": "Closing the payment-method modal cancels cleanly without creating a checkout session", "risk": "R-FUNC-01", "priority": "Low" },
+    { "id": "TC-PAY-012", "title": "Successful payment via a Stripe test card activates/extends the subscription", "risk": "R-FUNC-01", "priority": "High" },
+    { "id": "TC-PAY-013", "title": "A declined/failed card at Stripe Checkout leaves the subscription state unchanged", "risk": "R-FUNC-01", "priority": "Medium" },
+    { "id": "TC-PAY-014", "title": "Abandoning Stripe Checkout mid-session leaves no dangling subscription/charge state", "risk": "R-FUNC-01", "priority": "Low" },
+    { "id": "TC-PAY-015", "title": "Production Stripe Checkout rejects a well-known Stripe test card number (guards against accidental test-mode misconfiguration)", "risk": "R-PAY-03", "priority": "Medium" },
     { "id": "TC-TOS-001", "title": "Terms of Service is reachable without authentication", "risk": "R-ACC-01", "priority": "High" },
     { "id": "TC-SEC-001", "title": "Protected routes correctly redirect unauthenticated visitors to login", "risk": "R-SEC-01", "priority": "High" }
   ]

@@ -3,6 +3,7 @@ import { HomePage } from "../pages/home.page";
 import { LoginPage } from "../pages/login.page";
 import { RegisterPage } from "../pages/register.page";
 import { PaymentsPage } from "../pages/payments.page";
+import { StripeCheckoutPage } from "../pages/stripe-checkout.page";
 import { StatsPage } from "../pages/stats.page";
 import { BelowMarketPage } from "../pages/below-market.page";
 import { OffersPage } from "../pages/offers.page";
@@ -20,6 +21,7 @@ type PageFixtures = {
   loginPage: LoginPage;
   registerPage: RegisterPage;
   paymentsPage: PaymentsPage;
+  stripeCheckoutPage: StripeCheckoutPage;
   statsPage: StatsPage;
   belowMarketPage: BelowMarketPage;
   offersPage: OffersPage;
@@ -41,6 +43,9 @@ export const test = base.extend<PageFixtures>({
   },
   paymentsPage: async ({ page }, use) => {
     await use(new PaymentsPage(page));
+  },
+  stripeCheckoutPage: async ({ page }, use) => {
+    await use(new StripeCheckoutPage(page));
   },
   statsPage: async ({ page }, use) => {
     await use(new StatsPage(page));

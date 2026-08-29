@@ -1,6 +1,6 @@
 import { test as setup } from "@playwright/test";
 import { RegisterPage } from "../../pages/register.page";
-import { createDisposableAccount, trialTimeRemainingMs } from "../../helpers/test-data";
+import { createDisposableAccount, trialTimeRemainingMs, persistRegisteredAccount } from "../../helpers/test-data";
 import { createLogger } from "../../helpers/logger";
 
 /**
@@ -35,4 +35,5 @@ setup("register disposable trial account", async ({ page }) => {
   }
 
   await page.context().storageState({ path: authFile });
+  persistRegisteredAccount(account);
 });
