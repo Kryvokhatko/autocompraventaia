@@ -1,4 +1,4 @@
-import type { FullResult, Reporter, TestCase, TestResult } from "@playwright/test/reporter";
+import type { FullResult, Reporter, TestCase } from "@playwright/test/reporter";
 import fs from "fs";
 import path from "path";
 import { createLogger } from "./logger";
@@ -28,10 +28,51 @@ interface InventoryEntry {
   priority: string;
 }
 
-interface TracedResult {
-  id: string;
-  status: TestResult["status"];
+/**
+ * Readable result of one automated test, derived from Playwright's outcome
+ * and the test's expected status:
+ *   passed        — passed, as expected
+ *   known-defect  — marked test.fail() for an open site defect and failed as
+ *                   expected (Playwright counts this as a pass)
+ *   fixed?        — marked test.fail() but passed: the defect may be fixed,
+ *                   so the marker should be reviewed
+ *   failed        — failed unexpectedly
+ *   flaky         — failed, then passed on retry
+ *   skipped       — skipped or quarantined (test.skip / test.fixme)
+ */
+type TracedResult = "passed" | "known-defect" | "fixed?" | "failed" | "flaky" | "skipped";
+
+interface TracedRun {
   testTitle: string;
+  result: TracedResult;
+  outcome: ReturnType<TestCase["outcome"]>;
+  attempts: number;
+  // Reason given to test.fail() / test.fixme() / test.skip(), e.g. the
+  // open defect ID a known-defect test guards.
+  note?: string;
+}
+
+function toTracedRun(test: TestCase): TracedRun {
+  // Not result.status: that is the raw status of an attempt ("failed" for a
+  // test.fail() test that failed exactly as expected), not whether the
+  // outcome matched what the test declared it expects.
+  const outcome = test.outcome();
+  const expectsFailure = test.expectedStatus === "failed";
+  const result: TracedResult =
+    outcome === "skipped" ? "skipped"
+    : outcome === "flaky" ? "flaky"
+    : outcome === "expected" ? (expectsFailure ? "known-defect" : "passed")
+    : expectsFailure ? "fixed?" : "failed";
+
+  const note = test.annotations.find((a) => ["fail", "fixme", "skip"].includes(a.type))?.description;
+
+  return {
+    testTitle: test.title,
+    result,
+    outcome,
+    attempts: test.results.length,
+    ...(note ? { note } : {}),
+  };
 }
 
 const INVENTORY_PATH = path.join(__dirname, "test-case-inventory.json");
@@ -52,13 +93,16 @@ function extractTestCaseIds(test: TestCase): string[] {
 
 class TraceabilityReporter implements Reporter {
   private readonly log = createLogger("TraceabilityReporter");
-  private readonly traced = new Map<string, TracedResult[]>();
+  // Tests per TC ID. A Set, because onTestEnd fires once per attempt and a
+  // retried test must still count once; its outcome is read in onEnd, after
+  // all attempts are known.
+  private readonly traced = new Map<string, Set<TestCase>>();
 
-  onTestEnd(test: TestCase, result: TestResult) {
+  onTestEnd(test: TestCase) {
     for (const id of extractTestCaseIds(test)) {
-      const list = this.traced.get(id) ?? [];
-      list.push({ id, status: result.status, testTitle: test.title });
-      this.traced.set(id, list);
+      const tests = this.traced.get(id) ?? new Set<TestCase>();
+      tests.add(test);
+      this.traced.set(id, tests);
     }
   }
 
@@ -79,16 +123,24 @@ class TraceabilityReporter implements Reporter {
       ? (covered.length / inventory.length) * 100
       : 0;
 
+    const coveredWithRuns = covered.map((tc) => ({
+      ...tc,
+      runs: [...this.traced.get(tc.id)!].map(toTracedRun),
+    }));
+
+    const results: Partial<Record<TracedResult, number>> = {};
+    for (const run of coveredWithRuns.flatMap((tc) => tc.runs)) {
+      results[run.result] = (results[run.result] ?? 0) + 1;
+    }
+
     const report = {
       generatedAt: new Date().toISOString(),
       metric: "requirements/test-condition coverage (NOT code coverage)",
       totalTestCases: inventory.length,
       automatedTestCases: covered.length,
       coveragePercent: Number(coveragePercent.toFixed(1)),
-      covered: covered.map((tc) => ({
-        ...tc,
-        runs: this.traced.get(tc.id),
-      })),
+      results,
+      covered: coveredWithRuns,
       missing,
     };
 
@@ -96,8 +148,12 @@ class TraceabilityReporter implements Reporter {
     fs.writeFileSync(OUTPUT_PATH, JSON.stringify(report, null, 2));
 
     this.log.info(
-      `Requirements coverage: ${covered.length}/${inventory.length} test cases automated (${report.coveragePercent}%)`
+      `Requirements coverage: ${covered.length}/${inventory.length} test cases automated (${report.coveragePercent}%)`,
+      results
     );
+    if (results["fixed?"]) {
+      this.log.warn("A test marked test.fail() passed — its defect may be fixed; review the marker (result \"fixed?\")");
+    }
     if (missing.length > 0) {
       this.log.warn(
         `Missing automation for: ${missing.map((tc) => `${tc.id} (${tc.priority})`).join(", ")}`
