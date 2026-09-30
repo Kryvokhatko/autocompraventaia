@@ -37,7 +37,7 @@ test.describe("Login", () => {
 
     // A disposable account keeps real credentials out of this test's steps
     // and traces. Its session is dropped by clearing cookies rather than via
-    // the site's logout, which currently leaves the session active (D-14).
+    // the site's logout, which currently leaves the session active (D-15).
     const account = createDisposableAccount(test.info().workerIndex);
     await registerPage.goto("en");
     await registerPage.register(account.email, account.password);
@@ -101,13 +101,13 @@ test.describe("Login error handling", () => {
 test.describe("Logout", () => {
   test("TC-AUTH-006 — logged-in user can log out and loses access to authenticated pages", { tag: ["@p1"] }, async ({ registerPage, page }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-AUTH-006" });
-    // Open defect D-14 (intermittent, ~7 in 9 attempts): logout redirects to
+    // Open defect D-15 (intermittent, ~7 in 9 attempts): logout redirects to
     // the home page but the httpOnly BEARER session cookie survives (the
     // page's script cannot clear httpOnly cookies), so the user stays signed
     // in and /offers remains reachable. Because it only happens most of the
     // time, test.fail() would make this test flip between pass and fail —
     // it is quarantined instead until the defect is fixed.
-    test.fixme(true, "Quarantined — open defect D-14 (intermittent): session often stays active after logout");
+    test.fixme(true, "Quarantined — open defect D-15 (intermittent): session often stays active after logout");
 
     // Register to get an authenticated session.
     const account = createDisposableAccount(test.info().workerIndex);

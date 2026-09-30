@@ -82,7 +82,7 @@ Page Objects navigate through `BasePage.open()`, which fails with a clear messag
 
 Tests guarding a still-open site defect assert the **correct** behavior and are marked `test.fail(true, "Open defect D-xx: …")`. The suite stays green while the defect exists, and Playwright reports the test as an unexpected pass the day the defect is fixed — the cue to remove the marker. Currently open: D-01, D-04/D-05, D-07, D-08, D-09, D-10, D-11, D-12, D-13.
 
-An **intermittent** defect can't use `test.fail()` — the test would flip between pass and fail — so its test is quarantined with `test.fixme(true, "Quarantined — open defect D-xx …")` instead: skipped and visibly flagged in the report until the defect is fixed. Currently quarantined: D-14 (logout sometimes leaves the session active).
+An **intermittent** defect can't use `test.fail()` — the test would flip between pass and fail — so its test is quarantined with `test.fixme(true, "Quarantined — open defect D-xx …")` instead: skipped and visibly flagged in the report until the defect is fixed. Currently quarantined: D-15 (logout sometimes leaves the session active).
 
 ## Screenshot baselines
 

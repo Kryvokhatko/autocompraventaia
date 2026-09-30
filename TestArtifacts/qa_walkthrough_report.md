@@ -27,7 +27,7 @@
 | 5. Login | ✓ | ✗ D-02 | ✗ D-02 |
 | 6. Login via Google | ✓ | ✓ | ✓ |
 | 7. Login error handling | ✓ | — not tested (shared form/backend with EN) | — not tested (shared form/backend with EN) |
-| 8. Logout | ✓ | — not tested | — not tested |
+| 8. Logout | ✗ D-15 | — not tested | — not tested |
 | 9. Offers Dashboard | ✓ | — requires login, not tested | — requires login, not tested |
 | 10. Below-Market | ✗ D-10 | — requires login, not tested | ✗ D-10 |
 | 11. Interactive Map | ✓ | — not tested | — not tested |
@@ -55,7 +55,7 @@
 
 **Login error handling.** Wrong credentials show an inline "Invalid credentials." message; an empty submission is blocked by the browser's native "Please fill out this field." validation. Not separately tested on Spanish/German, since it's the same shared form and backend as English.
 
-**Logout.** Clears the session and redirects to the home page; a subsequent attempt to reach an authenticated page correctly redirects to login.
+**Logout.** Redirects to the home page, but in most attempts the session stays active: a subsequent visit to an authenticated page opens it instead of redirecting to login (D-15).
 
 **Offers Dashboard.** Loads with filter controls and a populated listing of 123 cars.
 
@@ -119,6 +119,7 @@ Usability/UX observations that aren't necessarily wrong, just worth the site own
 | D-12 | Terms of Service requires authentication | High | High | 2026-07-15 |
 | D-13 | Favorites badge count doesn't update live after removing a favorite | Low | Low | 2026-07-15 |
 | D-14 | Payment-method selection shows a Spanish plan label on the English payments page | Low | Low | 2026-07-15 |
+| D-15 | Logout frequently leaves the session active | High | High | 2026-09-30 |
 
 **D-01 — Favorites-Count API Throws a Client-Side Error for Unauthenticated Users**
 Environment: all public pages, all locales, unauthenticated.
@@ -195,6 +196,14 @@ Steps: log in, open Payments with English selected, click "Select Plan" on any p
 Expected: the payment-method selection step shows the plan name in English (e.g. "Daily - €2.99/day"), matching the plan card it was selected from.
 Actual: the payment-method step reads "Selected Plan: Diario - €2.99/día" — the Spanish plan name and price suffix, even though the plan card itself correctly read "Daily."
 
+**D-15 — Logout Frequently Leaves the Session Active**
+Environment: any authenticated page, English locale; reproduced with newly registered accounts.
+Steps: log in, open the navigation menu, click the logout icon, wait for the redirect to the home page, then navigate directly to `/offers`.
+Expected: logout ends the session; `/offers` redirects to the login page.
+Actual: the redirect to the home page happens, but in roughly 7 of 9 attempts the session remains active and `/offers` opens the dashboard. After logout the `BEARER` session cookie is still present in the browser. It is set as `httpOnly`, so the page's logout script cannot remove it, and the `/logout` endpoint does not reliably expire it.
+Impact: on a shared or public computer, the next person using the browser remains signed in to the previous user's account after that user has logged out.
+Suggested fix: have `/logout` expire the `BEARER` cookie server-side (a `Set-Cookie` with a past expiry and the same path, domain and flags as the original), and invalidate the session token on the server so a copied token stops working too.
+
 ---
 
 ## 5. Test-Artifact Traceability Index
@@ -205,7 +214,7 @@ Full test case text, technique, preconditions, steps, and expected/actual result
 |---|---|---|
 | Home / Landing Page localization | TCOND-03 | TC-HOME-001 |
 | Registration & Login | TCOND-01, TCOND-02, TCOND-09, TCOND-10, TCOND-12 | TC-AUTH-001, TC-AUTH-002, TC-AUTH-003, TC-AUTH-004, TC-AUTH-005, TC-AUTH-007 |
-| Logout | TCOND-11 | TC-AUTH-006 |
+| Logout (D-15) | TCOND-11 | TC-AUTH-006 |
 | Favorites-count API error handling | TCOND-04 | TC-API-001 |
 | Branding (logo/footer/feature-image alt text) | TCOND-05 | TC-BRAND-001 |
 | Payments — date/decimal/unit-suffix formatting | TCOND-06, TCOND-07, TCOND-08, TCOND-16 | TC-PAY-001, TC-PAY-002, TC-PAY-003, TC-PAY-004 |
@@ -227,3 +236,5 @@ Full test case text, technique, preconditions, steps, and expected/actual result
 Most defects sit in shared, site-wide components — translation resolution, the shared auth-form component, the shared payments-formatting utility, the shared branding partial — rather than isolated pages, so fixes should be added to the permanent regression suite rather than treated as one-offs. The auth-form and branding-partial fixes touch code paths rendered on every page load across all locales; the payments-formatting fix touches a shared currency/date utility that's worth checking for other call sites (invoices, plan comparisons) beyond the pages tested here.
 
 Four areas are newly covered by this report and should be added to the regression suite once addressed: the Below-Market localization gap (D-10), the Analytics page's resource-loading behavior (D-11), the Favorites-badge live-update gap (D-13), and — highest priority, given it's a compliance-relevant public page — Terms of Service route protection (D-12). D-14 (payment-method plan-label localization) is newly discovered and does not yet have a formalized test case.
+
+D-15 (logout leaving the session active) is the most severe open defect: it is a security issue rather than a display issue, and it affects every signed-in user. The existing logout test case (TC-AUTH-006) covers it, and the fix should be verified by repeating logout several times, since the failure is intermittent.
