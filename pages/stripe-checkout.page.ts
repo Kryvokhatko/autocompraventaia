@@ -1,12 +1,17 @@
-import { expect, type Locator, type Page } from "@playwright/test";
+import { expect, type Frame, type Locator, type Page } from "@playwright/test";
 import { createLogger, type Logger } from "../helpers/logger";
 
-export type StripeCurrency = "uah" | "eur";
+/**
+ * Checkout prices the plan in the visitor's local currency, chosen from the
+ * visitor's location (UAH from Ukraine, USD from a US-hosted CI runner), and
+ * offers the merchant's own currency, EUR, as the alternative. Only EUR is
+ * the same everywhere, so it is the one option addressed by name.
+ */
+export type CheckoutCurrency = "eur" | "local";
 
-const CURRENCY_NAME: Record<StripeCurrency, RegExp> = {
-  uah: /^(UA\s+)?UAH\s/,
-  eur: /^(EU\s+)?€\d/,
-};
+// "EU €2.99" or "€2.99" — the flag image's alt-text prefix appears in some
+// Checkout sessions and not others; the amount is ignored.
+const EURO_OPTION_NAME = /^(EU\s+)?€\d/;
 
 /**
  * Represents the Stripe-hosted Checkout page that PaymentsPage.chooseStripe()
@@ -27,12 +32,11 @@ export class StripeCheckoutPage {
   private readonly log: Logger;
 
   // The single line item Stripe renders for the plan being purchased, e.g.
-  // "Acceso por 1 día  UAH 161.28" — confirmed live; text stays Spanish
+  // "Acceso por 1 día  UAH 161.28" or "Acceso por 1 día  $3.53" depending
+  // on the visitor's location; the label stays Spanish
   // regardless of the site locale the visitor came from (same pattern as
   // PaymentsPage.selectedPlanSummary).
   readonly lineItem: Locator;
-  readonly emailValue: Locator;
-  readonly payButton: Locator;
   readonly backToSiteLink: Locator;
 
   constructor(private readonly page: Page) {
@@ -41,10 +45,6 @@ export class StripeCheckoutPage {
     // `.LineItem-productName` element; the label's own text wrapper
     // (`.ExpandableText`) does not contain the price.
     this.lineItem = page.locator(".LineItem-productName").locator("..");
-    // The pre-filled email is rendered in Stripe's semantic (not hashed)
-    // ReadOnlyFormField-title component.
-    this.emailValue = page.locator(".ReadOnlyFormField-title");
-    this.payButton = page.getByRole("button", { name: "Pay" });
     this.backToSiteLink = page.getByRole("link", { name: "Back to Auto CompraVenta IA" });
   }
 
@@ -57,45 +57,41 @@ export class StripeCheckoutPage {
     await this.page.waitForURL(/checkout\.stripe\.com/, { waitUntil: "domcontentloaded", timeout: 15000 });
     await this.lineItem.waitFor({ state: "visible", timeout: 20000 });
     // The line item's label renders before its converted amount (the live
-    // conversion rate arrives separately), so wait for the currency figure.
-    await expect(this.lineItem).toContainText(/€|UAH/, { timeout: 15000 });
+    // conversion rate arrives separately), so wait for the amount itself —
+    // in whatever currency this visitor's location gets.
+    await expect(this.lineItem).toContainText(/\d[.,]\d{2}/, { timeout: 15000 });
   }
 
   /**
-   * Stripe serves two variants of the "Choose currency" switcher, varying
-   * between Checkout sessions:
+   * The EUR option of the "Choose currency" switcher. Stripe serves two
+   * variants of the switcher, varying between Checkout sessions:
    *   - buttons in the page itself, the active currency's button disabled;
    *   - a radio group inside an iframe, the active currency's radio checked.
-   * Either way the accessible name is the currency plus the live-converted
-   * amount, sometimes prefixed by the flag image's alt text ("UA UAH 158.09"
-   * or "UAH 158.09", "EU €2.99" or "€2.99"), so the amount is ignored and
-   * the flag prefix is optional.
    */
-  private async currencyControl(currency: StripeCurrency): Promise<{ control: Locator; kind: "button" | "radio" }> {
-    const name = CURRENCY_NAME[currency];
+  private async euroOption(): Promise<{ control: Locator; kind: "button" | "radio" }> {
     let found: { control: Locator; kind: "button" | "radio" } | undefined;
     await expect(async () => {
-      const button = this.page.getByRole("button", { name });
+      const button = this.page.getByRole("button", { name: EURO_OPTION_NAME });
       if (await button.count()) {
         found = { control: button, kind: "button" };
         return;
       }
       for (const frame of this.page.frames()) {
-        const radio = frame.getByRole("radio", { name });
+        const radio = frame.getByRole("radio", { name: EURO_OPTION_NAME });
         if (await radio.count()) {
           found = { control: radio, kind: "radio" };
           return;
         }
       }
-      throw new Error(`No "${currency}" currency option found in Stripe Checkout`);
+      throw new Error("No EUR option found in Stripe Checkout's currency switcher");
     }).toPass({ timeout: 15_000 });
     this.log.debug("Currency switcher variant", { kind: found!.kind });
     return found!;
   }
 
-  async selectCurrency(currency: StripeCurrency) {
-    this.log.info("Switching Checkout currency", { currency });
-    const { control, kind } = await this.currencyControl(currency);
+  async switchToEuro() {
+    this.log.info("Switching Checkout currency to EUR");
+    const { control, kind } = await this.euroOption();
     if (kind === "radio") {
       // The visible option is a styled label drawn beside the radio input, so
       // a pointer click at the input's position does not select it, and
@@ -107,33 +103,63 @@ export class StripeCheckoutPage {
       await control.click();
     }
     // The switcher's own state changes before the line item's amount is
-    // recalculated, so wait on the line item showing the new currency — the
-    // content callers actually read.
-    const symbol = currency === "eur" ? "€" : "UAH";
-    await expect(this.lineItem).toContainText(symbol, { timeout: 10000 });
+    // recalculated, so wait on the line item showing euros — the content
+    // callers actually read.
+    await expect(this.lineItem).toContainText("€", { timeout: 10000 });
   }
 
-  /** Reads the active currency from the switcher state (disabled button or
-   * checked radio, see currencyControl) rather than parsing the fluctuating
-   * converted amount. */
-  async activeCurrency(): Promise<StripeCurrency> {
-    const { control, kind } = await this.currencyControl("uah");
-    const uahActive = kind === "radio" ? await control.isChecked() : await control.isDisabled();
-    return uahActive ? "uah" : "eur";
+  /** Reads the active currency from the EUR option's state (disabled button
+   * or checked radio) rather than parsing the fluctuating converted amount. */
+  async activeCurrency(): Promise<CheckoutCurrency> {
+    const { control, kind } = await this.euroOption();
+    const euroActive = kind === "radio" ? await control.isChecked() : await control.isDisabled();
+    return euroActive ? "eur" : "local";
   }
 
   async lineItemText(): Promise<string> {
     return (await this.lineItem.innerText()).trim();
   }
 
+  /**
+   * Stripe serves the contact/payment form in one of two layouts, varying
+   * between Checkout sessions: directly in the page (email shown as
+   * read-only text, `.ReadOnlyFormField-title`), or inside an iframe (email
+   * shown as a disabled "Email" textbox, card and billing fields and the Pay
+   * button all inside that frame). Returns whichever frame holds the card
+   * number field.
+   */
+  private async formFrame(): Promise<Frame> {
+    let found: Frame | undefined;
+    await expect(async () => {
+      for (const frame of [this.page.mainFrame(), ...this.page.frames()]) {
+        if (await frame.getByRole("textbox", { name: "Card number" }).count()) {
+          found = frame;
+          return;
+        }
+      }
+      throw new Error("Stripe Checkout payment form not found");
+    }).toPass({ timeout: 15_000 });
+    this.log.debug("Checkout form layout", { inIframe: found !== this.page.mainFrame() });
+    return found!;
+  }
+
   async emailText(): Promise<string> {
-    return (await this.emailValue.innerText()).trim();
+    const frame = await this.formFrame();
+    const readOnlyEmail = frame.locator(".ReadOnlyFormField-title");
+    if (await readOnlyEmail.count()) {
+      return (await readOnlyEmail.innerText()).trim();
+    }
+    return (await frame.getByRole("textbox", { name: "Email" }).inputValue()).trim();
+  }
+
+  async payButton(): Promise<Locator> {
+    return (await this.formFrame()).getByRole("button", { name: "Pay" });
   }
 
   /**
    * Waits for the Amazon Pay wallet asset request Stripe only issues for
    * some currencies (confirmed live: present after switching to EUR, not
-   * present under the UAH default — see TC-PAY-009). Resolves to
+   * present under the local-currency default — see TC-PAY-009). Resolves to
    * true/false rather than throwing, since wallet eligibility is
    * legitimately environment-dependent (browser/device/region), not a
    * hard pass/fail signal on its own.
@@ -148,35 +174,36 @@ export class StripeCheckoutPage {
   }
 
   /**
-   * This Checkout Session renders the card fields as plain page-level
-   * inputs, not inside an iframe: `#cardForm-fieldset` contains
-   * `#cardNumber` (aria-label "Card number"), `#cardExpiry` ("Expiration")
-   * and `#cardCvc` ("Credit or debit card CVC/CVV"). That is specific to
-   * this Checkout configuration and would change if the integration moved
-   * to embedded Elements.
+   * Fills the card and billing fields in whichever layout this session uses
+   * (see formFrame). Field names differ slightly between the two layouts:
+   * "Expiration" vs "Expiration (MM/YY)", "Credit or debit card CVC/CVV" vs
+   * "Security code", and a "Full name on card" placeholder vs a "Full name"
+   * label — the locators below accept both. Textbox roles are used because
+   * an SVG help icon next to the CVC field carries the same aria-label.
    *
-   * Cardholder name, Address line 1, City and Postal code are also
-   * required; without them "Pay" stops at client-side validation and the
-   * card number is never evaluated. They get fixed, clearly fake filler
-   * values; `opts.name` overrides the cardholder name.
+   * Cardholder name, Address line 1, City and Postal code are required;
+   * without them "Pay" stops at client-side validation and the card number
+   * is never evaluated. They get fixed, clearly fake filler values;
+   * `opts.name` overrides the cardholder name.
    */
   async fillCardTestData(opts: { number: string; expiry: string; cvc: string; name?: string }) {
-    await this.page.getByLabel("Card number").fill(opts.number);
-    await this.page.getByLabel("Expiration").fill(opts.expiry);
-    // A plain getByLabel(/CVC/i) is ambiguous — an adjacent SVG help icon
-    // carries the identical aria-label ("Credit or debit card CVC/CVV")
-    // for its own accessibility purposes. Scope to the textbox role to
-    // get just the input.
-    await this.page.getByRole("textbox", { name: /CVC/i }).fill(opts.cvc);
-    await this.page.getByPlaceholder(/full name on card/i).fill(opts.name ?? "QA Automation");
-    await this.page.getByLabel("Address line 1").fill("1 Test Street");
-    await this.page.getByLabel("City").fill("Kyiv");
-    await this.page.getByLabel("Postal code").fill("01001");
+    const form = await this.formFrame();
+    await form.getByRole("textbox", { name: "Card number" }).fill(opts.number);
+    await form.getByRole("textbox", { name: /^Expiration/ }).fill(opts.expiry);
+    await form.getByRole("textbox", { name: /CVC|Security code/i }).fill(opts.cvc);
+    await form
+      .getByPlaceholder(/full name on card/i)
+      .or(form.getByRole("textbox", { name: /^full name$/i }))
+      .first()
+      .fill(opts.name ?? "QA Automation");
+    await form.getByRole("textbox", { name: "Address line 1" }).fill("1 Test Street");
+    await form.getByRole("textbox", { name: "City" }).fill("Kyiv");
+    await form.getByRole("textbox", { name: "Postal code" }).fill("01001");
   }
 
   async submitPayment() {
     this.log.info("Submitting payment");
-    await this.payButton.click();
+    await (await this.payButton()).click();
   }
 
   async goBackToSite() {

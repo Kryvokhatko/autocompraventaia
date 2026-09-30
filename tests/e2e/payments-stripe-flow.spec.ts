@@ -29,9 +29,9 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
     await paymentsPage.openPaymentMethodModal("daily");
 
     await expect(paymentsPage.selectedPlanSummary).toBeVisible();
-    // Confirmed live: the modal shows the plan name in Spanish regardless of
-    // the site locale, and the EUR price shown on-site (not the UAH amount
-    // Stripe later converts to).
+    // The modal shows the plan name in Spanish regardless of the site
+    // locale, and the EUR price shown on-site (not the local-currency amount
+    // Stripe Checkout later converts to).
     const summary = await paymentsPage.selectedPlanSummary.innerText();
     expect(summary).toContain("Diario");
     expect(summary).toContain("2.99");
@@ -68,7 +68,7 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
     expect(await stripeCheckoutPage.lineItemText()).toContain("Acceso por 1 día");
   });
 
-  test("TC-PAY-008 — Stripe Checkout defaults to UAH rather than the EUR price shown on-site", { tag: ["@p1"] }, async ({ paymentsPage, stripeCheckoutPage }) => {
+  test("TC-PAY-008 — Stripe Checkout defaults to the visitor's local currency rather than the EUR price shown on-site", { tag: ["@p1"] }, async ({ paymentsPage, stripeCheckoutPage }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-008" });
 
     await paymentsPage.goto("en");
@@ -76,11 +76,14 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
     await paymentsPage.chooseStripe();
     await stripeCheckoutPage.waitForLoad();
 
-    // Documents current (ambiguous, not-yet-resolved) behavior, NOT an
-    // asserted-correct expectation — see R-PAY-02 in
-    // TestArtifacts/test_cases_2026-07-15.md. Pending stakeholder input on
-    // whether checkout should default to the on-site currency.
-    expect(await stripeCheckoutPage.activeCurrency()).toBe("uah");
+    // Documents current behavior, NOT an asserted-correct expectation — see
+    // R-PAY-02 in TestArtifacts/test_cases_2026-07-15.md. Checkout converts
+    // the price to the visitor's local currency by location (UAH from
+    // Ukraine, USD from a US-hosted CI runner) and offers EUR as the
+    // alternative. Pending stakeholder input on whether it should default to
+    // the EUR price shown on-site. A visitor inside the eurozone would see
+    // EUR and fail this check.
+    expect(await stripeCheckoutPage.activeCurrency()).toBe("local");
   });
 
   test("TC-PAY-009 — switching currency recalculates the amount and updates wallet availability", { tag: ["@p1", "@regression"] }, async ({ paymentsPage, stripeCheckoutPage }, testInfo) => {
@@ -91,14 +94,15 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
     await paymentsPage.chooseStripe();
     await stripeCheckoutPage.waitForLoad();
 
-    const uahLine = await stripeCheckoutPage.lineItemText();
-    expect(uahLine).toContain("UAH");
+    // Starts in the visitor's local currency (see TC-PAY-008).
+    const localLine = await stripeCheckoutPage.lineItemText();
+    expect(localLine).not.toContain("€");
 
-    await stripeCheckoutPage.selectCurrency("eur");
+    await stripeCheckoutPage.switchToEuro();
 
     const eurLine = await stripeCheckoutPage.lineItemText();
     expect(eurLine).toContain("€");
-    expect(eurLine).not.toContain("UAH");
+    expect(eurLine).not.toBe(localLine);
 
     // Wallet half — soft/surfaced result, not a hard gate: wallet
     // eligibility is legitimately environment-dependent (browser/device/
@@ -260,6 +264,6 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
     await page.waitForTimeout(5000);
     await expect(page).not.toHaveURL(/checkout\.stripe\.com\/.*success/i);
     await expect(page.getByRole("heading", { name: /success|confirmed|thank you/i })).not.toBeVisible();
-    await expect(stripeCheckoutPage.payButton).toBeVisible();
+    await expect(await stripeCheckoutPage.payButton()).toBeVisible();
   });
 });

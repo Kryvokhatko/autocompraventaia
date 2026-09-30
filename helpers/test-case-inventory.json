@@ -27,7 +27,7 @@
     { "id": "TC-PAY-005", "title": "Payment-method modal echoes the selected plan's name and price", "risk": "R-FUNC-01", "priority": "Medium" },
     { "id": "TC-PAY-006", "title": "Payment-method modal only allows selecting implemented methods (Stripe); PayPal and Bank Transfer are visibly disabled", "risk": "R-FUNC-01", "priority": "Medium" },
     { "id": "TC-PAY-007", "title": "Selecting Stripe creates a checkout session and redirects to a valid Stripe-hosted Checkout page", "risk": "R-FUNC-01", "priority": "High" },
-    { "id": "TC-PAY-008", "title": "Stripe Checkout defaults to UAH rather than the EUR price shown on the site's pricing page", "risk": "R-PAY-02", "priority": "Medium" },
+    { "id": "TC-PAY-008", "title": "Stripe Checkout defaults to the visitor's local currency rather than the EUR price shown on the site's pricing page", "risk": "R-PAY-02", "priority": "Medium" },
     { "id": "TC-PAY-009", "title": "Switching currency on Stripe Checkout recalculates the amount and updates available payment methods", "risk": "R-PAY-02", "priority": "Low" },
     { "id": "TC-PAY-010", "title": "Stripe Checkout's pre-filled email matches the authenticated user's account email", "risk": "R-FUNC-01", "priority": "Medium" },
     { "id": "TC-PAY-011", "title": "Closing the payment-method modal cancels cleanly without creating a checkout session", "risk": "R-FUNC-01", "priority": "Low" },
