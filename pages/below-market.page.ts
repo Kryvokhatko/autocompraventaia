@@ -12,7 +12,7 @@ export class BelowMarketPage extends BasePage {
 
   async goto(locale: Locale) {
     this.log.info("Navigating to below-market page", { locale });
-    await this.page.goto(`/below-market?_locale=${locale}`);
+    await this.open("/below-market", locale);
   }
 
   async pageTitle(): Promise<string> {

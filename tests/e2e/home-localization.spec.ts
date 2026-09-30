@@ -3,42 +3,44 @@ import { test, expect } from "../../fixtures/pages.fixture";
 /**
  * Home-page localization regression test.
  *
- * Under ?_locale=de, several sections on the home page are stuck in Spanish:
- * audience cards, calculator breakdown, and the success-stories section.
- * This test asserts those Spanish substrings are absent and that the German
- * equivalents are present instead.
+ * Under ?_locale=de, the audience cards, profit calculator and deal-example
+ * sections must render in German, with none of their Spanish copy leaking
+ * through. Guards defect D-03 (those sections stuck in Spanish), which is
+ * fixed on the live site.
  */
 
+// Spanish headings of the same sections, as served under ?_locale=es.
+const SPANISH_SECTION_COPY = [
+  "Concesionarios y compraventas",
+  "Comerciantes independientes",
+  "Importadores y asesores de compra",
+  "Estima el beneficio potencial",
+  "Ejemplos de cálculo de operaciones",
+  "Características Principales",
+];
+
+const GERMAN_SECTION_COPY = [
+  "Autohäuser und Gebrauchtwagenhändler",
+  "Selbstständige Fahrzeughändler",
+  "Importeure und Fahrzeugvermittler",
+  "Möglichen Gewinn kalkulieren",
+  "Beispielkalkulationen",
+  "Hauptfunktionen",
+];
+
 test.describe("Home page localization", () => {
-  test("TC-HOME-001 — DE home page renders audience, calculator, and success-story sections in German", { tag: ["@critical", "@p0", "@regression"] }, async ({ homePage }) => {
+  test("TC-HOME-001 — DE home page renders audience, calculator, and deal-example sections in German", { tag: ["@critical", "@p0", "@regression"] }, async ({ homePage }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-HOME-001" });
 
     await homePage.goto("de");
 
     const body = await homePage.bodyText();
 
-    // Audience cards: Spanish strings must not appear.
-    expect(body).not.toContain("Compraventas y Concesionarios");
-    expect(body).not.toContain("Compradores Particulares");
-    expect(body).not.toContain("Inversores");
-
-    // Calculator breakdown: Spanish strings must not appear.
-    expect(body).not.toContain("Qué incluye el cálculo:");
-    expect(body).not.toContain("Transporte");
-    expect(body).not.toContain("Impuesto matriculación (IEDMT)");
-    expect(body).not.toContain("Gestoría e ITV");
-    expect(body).not.toContain("Precios reales de reventa en España");
-    expect(body).not.toContain("Basado en datos reales de mercado");
-
-    // Success stories: Spanish labels must not appear.
-    expect(body).not.toContain("Casos de Éxito Reales");
-    expect(body).not.toContain("Comprado en DE:");
-    expect(body).not.toContain("Vendido en ES:");
-    expect(body).not.toContain("Beneficio Neto:");
-
-    // German equivalents should be present.
-    expect(body).toContain("Händler");
-    expect(body).toContain("Investoren");
-    expect(body).toContain("Erfolgsgeschichten");
+    for (const spanish of SPANISH_SECTION_COPY) {
+      expect(body, `Spanish copy leaked into DE page: "${spanish}"`).not.toContain(spanish);
+    }
+    for (const german of GERMAN_SECTION_COPY) {
+      expect(body, `German copy missing: "${german}"`).toContain(german);
+    }
   });
 });

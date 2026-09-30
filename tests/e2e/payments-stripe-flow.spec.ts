@@ -1,13 +1,13 @@
 import { test, expect } from "../../fixtures/pages.fixture";
-import { readRegisteredAccount } from "../../helpers/test-data";
+import { AUTH_FILE, getTestUser } from "../../helpers/test-user";
 
 /**
  * Payments payment-method selection + Stripe Checkout flow tests
  * (TC-PAY-005 through TC-PAY-015).
  *
- * These tests require an authenticated session (the site grants a 14-minute
- * trial window per account). The shared auth.setup.ts registers one account
- * and persists storageState; this file opts into that session.
+ * These run as the shared paid account signed in by
+ * tests/setup/auth.setup.ts. Opening Checkout creates a Stripe Checkout
+ * Session but never charges anything: no test here submits a real card.
  *
  * Stripe-key caution: this environment runs on LIVE Stripe keys. TC-PAY-005
  * through TC-PAY-011 and TC-PAY-014 never submit a card at all, and
@@ -19,7 +19,7 @@ import { readRegisteredAccount } from "../../helpers/test-data";
  * exist.
  */
 
-test.use({ storageState: "playwright/.auth/trial-session.json" });
+test.use({ storageState: AUTH_FILE });
 
 test.describe("Payments payment-method selection and Stripe Checkout", () => {
   test("TC-PAY-005 — payment-method modal echoes the selected plan's name and price", { tag: ["@critical", "@p0", "@regression"] }, async ({ paymentsPage }) => {
@@ -118,11 +118,9 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
     await paymentsPage.chooseStripe();
     await stripeCheckoutPage.waitForLoad();
 
-    // auth.setup.ts now persists the registered account's email alongside
-    // storageState (see helpers/test-data.ts persistRegisteredAccount) —
-    // read it back and compare directly against Checkout's pre-filled
-    // value, per the test case's original intent.
-    const { email } = readRegisteredAccount();
+    // The signed-in account is the shared test user, so its email is known
+    // from the environment and can be compared directly.
+    const { email } = getTestUser();
     expect(await stripeCheckoutPage.emailText()).toBe(email);
   });
 
@@ -243,11 +241,6 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
     // never risks a real charge — a cheap guard against ever accidentally
     // deploying test-mode keys to production. See R-PAY-03 in
     // TestArtifacts/test_cases_2026-07-15.md.
-    //
-    // fillCardTestData is NOT independently verified against the live DOM
-    // (see the caveat on StripeCheckoutPage.fillCardTestData). If this test
-    // fails with a "locator not found" for the card frame, that caveat is the
-    // first thing to check — not a site defect.
     await stripeCheckoutPage.fillCardTestData({
       number: "4242424242424242",
       expiry: "12/34",
@@ -255,20 +248,15 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
     });
     await stripeCheckoutPage.submitPayment();
 
-    // SCOPE NOTE (confirmed via three real runs against the live account):
-    // submitting this card consistently does NOT produce a visible
-    // declined/invalid message within 20s — the Pay button simply returns
-    // to its idle "Pay" state with no on-page error text at all. The most
-    // likely explanation is that Stripe's bot-detection (hCaptcha-invisible,
-    // HumanSecurity) silently drops automated submissions rather than
-    // surfacing feedback, which a legitimate anti-fraud system doing its
-    // job would be expected to do. Chasing a specific visible error message
-    // further isn't reliable from outside Stripe's own systems, so this
-    // assertion was deliberately narrowed to the weaker but honestly
-    // verifiable invariant R-PAY-03 actually needs: a live-mode test-card
-    // submission must never reach a successful/confirmed state. Revisit if
-    // Stripe dashboard/API access becomes available to confirm the exact
-    // server-side outcome.
+    // Scope: submitting this card does not produce a visible declined/invalid
+    // message — the Pay button returns to its idle state with no on-page
+    // error. Stripe's bot detection (invisible hCaptcha, HumanSecurity)
+    // appears to drop automated submissions silently, so a specific error
+    // message can't be asserted from outside Stripe. The assertion is the
+    // invariant R-PAY-03 needs: a live-mode test-card submission never
+    // reaches a successful/confirmed state. There is no event marking
+    // "Stripe has finished processing", hence the fixed 5s settle before
+    // checking. Revisit if Stripe dashboard/API access becomes available.
     await page.waitForTimeout(5000);
     await expect(page).not.toHaveURL(/checkout\.stripe\.com\/.*success/i);
     await expect(page.getByRole("heading", { name: /success|confirmed|thank you/i })).not.toBeVisible();

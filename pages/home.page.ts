@@ -12,6 +12,6 @@ export class HomePage extends BasePage {
 
   async goto(locale: Locale) {
     this.log.info("Navigating to home page", { locale });
-    await this.page.goto(`/?_locale=${locale}`);
+    await this.open("/", locale);
   }
 }

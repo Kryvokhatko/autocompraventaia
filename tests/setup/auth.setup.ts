@@ -1,39 +1,47 @@
-import { test as setup } from "@playwright/test";
-import { RegisterPage } from "../../pages/register.page";
-import { createDisposableAccount, trialTimeRemainingMs, persistRegisteredAccount } from "../../helpers/test-data";
+import { test as setup, expect } from "@playwright/test";
+import { LoginPage } from "../../pages/login.page";
+import { AUTH_FILE, getTestUser } from "../../helpers/test-user";
 import { createLogger } from "../../helpers/logger";
 
 /**
- * Registers ONE fresh disposable account and persists storageState for reuse
- * across every browser/device project in this run (storageState is just
- * cookies + localStorage — it is not tied to a browser engine, so chromium/
- * firefox/webkit/mobile projects can all load the same file).
+ * Signs in the shared paid test account once per run and saves the session
+ * (storageState) so every spec that needs a signed-in user reuses it.
+ * Failing here fails fast with one clear error instead of every dependent
+ * test failing on a login page.
  *
- * Why one shared account instead of one per project: the site grants only a
- * 14-minute free-access trial per registered account. Registering once and
- * reusing the session keeps the whole authenticated suite inside that
- * window and avoids hammering the site with unnecessary registrations.
+ * Why a paid account rather than self-registered ones: a newly registered
+ * account only gets a ~60-second free trial, after which every dashboard page
+ * redirects to /pagos — far shorter than one run of the suite.
  */
 
+// This step handles the shared account's credentials, and traces record
+// the arguments of every action. CI uploads reports as downloadable
+// artifacts, so recording is disabled here (see also
+// LoginPage.loginWithSecretCredentials).
+setup.use({ trace: "off", screenshot: "off", video: "off" });
+
 const log = createLogger("AuthSetup");
-const authFile = "playwright/.auth/trial-session.json";
 
-setup("register disposable trial account", async ({ page }) => {
-  const account = createDisposableAccount();
-  log.info("Registering disposable trial account", { email: account.email });
+setup("sign in shared paid test account", async ({ page }) => {
+  const user = getTestUser();
 
-  const registerPage = new RegisterPage(page);
-  await registerPage.goto("en");
-  await registerPage.register(account.email, account.password);
+  log.info("Signing in shared test account");
+  const loginPage = new LoginPage(page);
+  await loginPage.goto("en");
+  await loginPage.loginWithSecretCredentials(user.email, user.password);
+  await expect(page).toHaveURL(/\/offers/, { timeout: 15_000 });
 
-  const remainingMs = trialTimeRemainingMs(account.registeredAt);
-  log.info("Registration complete; trial window active", {
-    trialMinutesRemaining: Math.round(remainingMs / 60000),
-  });
-  if (remainingMs < 10 * 60 * 1000) {
-    log.warn("Less than 10 minutes of trial remaining right after registration — investigate slow registration flow");
+  const expiresAt = await loginPage.navbar.trialExpiresAt();
+  if (expiresAt <= Date.now()) {
+    throw new Error("The shared test account's subscription has expired and needs renewing by the site owner.");
   }
 
-  await page.context().storageState({ path: authFile });
-  persistRegisteredAccount(account);
+  const daysLeft = Math.floor((expiresAt - Date.now()) / 86_400_000);
+  if (daysLeft < 14) {
+    log.warn(`Shared test account subscription expires in ${daysLeft} days`);
+  } else {
+    log.info("Shared test account subscription is active", { subscriptionDaysLeft: daysLeft });
+  }
+
+  await page.context().storageState({ path: AUTH_FILE });
 });

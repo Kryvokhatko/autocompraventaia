@@ -16,18 +16,18 @@ export class RegisterPage extends BasePage {
     this.emailInput = page.getByLabel(/e-?mail|correo electrónico/i);
     this.passwordInput = page.getByLabel(/password|contraseña|passwort/i);
     this.submitButton = page.getByRole("button", {
-      name: /register|regist/i,
+      name: /create an account|crear una cuenta|konto erstellen/i,
     });
   }
 
   async goto(locale: Locale) {
     this.log.info("Navigating to register page", { locale });
-    await this.page.goto(`/register?_locale=${locale}`);
+    await this.open("/register", locale);
   }
 
   /**
-   * Registers a fresh account. The site grants only a 14-minute free-trial
-   * window per account, so callers must treat the resulting session as
+   * Registers a fresh account. The site grants only a ~60-second free trial
+   * per new account, so callers must treat the resulting session as
    * short-lived — see helpers/test-data.ts.
    */
   async register(email: string, password: string) {

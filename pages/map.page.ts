@@ -22,7 +22,7 @@ export class MapPage extends BasePage {
 
   async goto(locale: Locale) {
     this.log.info("Navigating to interactive map", { locale });
-    await this.page.goto(`/map?_locale=${locale}`);
+    await this.open("/map", locale);
   }
 
   async markerCount(): Promise<number> {

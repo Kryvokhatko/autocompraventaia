@@ -14,6 +14,6 @@ export class TopSalesPage extends BasePage {
 
   async goto(locale: Locale) {
     this.log.info("Navigating to top sales page", { locale });
-    await this.page.goto(`/top-sales?_locale=${locale}`);
+    await this.open("/top-sales", locale);
   }
 }

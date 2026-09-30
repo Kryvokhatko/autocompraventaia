@@ -4,19 +4,38 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  # Nightly run against the live site catches site-side changes (redesigns,
+  # new defects) even on days nobody opens a pull request.
+  schedule:
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+
+# A new push to a PR cancels the older, now-outdated run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
-    timeout-minutes: 60
+    timeout-minutes: 30
     runs-on: ubuntu-latest
+    env:
+      # Target URL comes from a repository variable, so the same workflow
+      # can point at a staging environment without code changes.
+      BASE_URL: ${{ vars.BASE_URL || 'https://autocompraventaia.es/' }}
+      # Shared paid test account (Settings → Secrets and variables → Actions).
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
       with:
         node-version: lts/*
+        cache: npm
     - name: Install dependencies
       run: npm ci
     - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
+      run: npx playwright install --with-deps chromium
     - name: Run Playwright tests
       run: npx playwright test
     - uses: actions/upload-artifact@v4

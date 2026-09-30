@@ -39,21 +39,14 @@ export class PaymentsPage extends BasePage {
 
   async goto(locale: Locale) {
     this.log.info("Navigating to payments page", { locale });
-    await this.page.goto(`/pagos?_locale=${locale}`);
+    await this.open("/pagos", locale);
   }
 
   /**
-   * FIX (this session, confirmed via a real failing run — not a
-   * pre-existing convention to preserve as-is): the previous
-   * `getByText(PLAN_HEADING[plan]).locator("..")` was a strict-mode
-   * violation for "daily" specifically — the Monthly and Yearly cards each
-   * contain their own comparison copy ("Save vs daily plan: 79%"/"91%"),
-   * so the plain-text regex matched 3 elements instead of 1. Scoping to a
-   * level-3 heading role avoids that false match, and going up two levels
-   * (heading -> `.pricing-card-header` -> the card itself, confirmed live)
-   * reaches the actual card container that also holds the price and the
-   * "Select Plan" button — the single `..` used before only reached the
-   * header wrapper, which is why `selectPlanButton()` timed out.
+   * Anchored on the level-3 plan heading: plain text matching for "daily"
+   * would also hit the Monthly and Yearly cards' "Save vs daily plan" copy.
+   * Two levels up (heading -> `.pricing-card-header` -> card) is the card
+   * container that holds the price and the "Select Plan" button.
    */
   planCard(plan: PlanName): Locator {
     return this.page.getByRole("heading", { level: 3, name: PLAN_HEADING[plan] }).locator("..").locator("..");

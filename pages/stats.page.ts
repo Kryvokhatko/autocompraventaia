@@ -37,7 +37,7 @@ export class StatsPage extends BasePage {
     // failures, which can prevent the "load" event from firing promptly.
     // Content readiness is confirmed via explicit locator assertions after
     // goto, not by waiting for every resource to settle.
-    await this.page.goto(`/stats/profit?_locale=${locale}`, { waitUntil: "domcontentloaded" });
+    await this.open("/stats/profit", locale, { waitUntil: "domcontentloaded" });
   }
 
   tab(name: (typeof TAB_NAMES)[number]): Locator {

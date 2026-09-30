@@ -8,3 +8,6 @@ node_modules/
 /playwright/.auth/
 _staging/
 .playwright-cli/
+
+# Local credentials — see .env.example
+.env

@@ -3,14 +3,12 @@ import { test, expect } from "../../fixtures/pages.fixture";
 /**
  * Auth-form localization regression tests.
  *
- * The login and register forms are currently hardcoded to English regardless
- * of the ?_locale= query parameter, even though the surrounding nav bar
- * localizes correctly. These tests assert the CORRECT localized text so
- * they act as regression gates once the defect is fixed.
+ * The login and register forms must render in the active locale — heading,
+ * field labels, submit button, the Google sign-in link and the link to the
+ * other form. Guards defect D-02 (forms stuck in English regardless of
+ * ?_locale=), which is fixed on the live site; expected copy below is the
+ * site's current wording.
  */
-/*
-Not a test bug — leaving as-is: both tests now fail one line later, on the form heading ("Please sign in" instead of "Iniciar sesión", "Register" instead of "Registrieren"). That's the actual, already-documented app defect the spec file's own header describes: "the login and register forms are currently hardcoded to English regardless of the locale... these tests act as regression gates once the defect is fixed." That's a real product bug for the app team, not something to patch in the test.
-*/
 
 test.describe("Login form localization", () => {
   test("TC-AUTH-001 — login form renders in Spanish under ES locale", { tag: ["@critical", "@p0", "@regression"] }, async ({ loginPage, page }) => {
@@ -18,25 +16,18 @@ test.describe("Login form localization", () => {
 
     await loginPage.goto("es");
 
-    // Nav bar correctly localizes — confirm the locale took effect.
+    // Confirm the locale took effect before checking the form.
     await loginPage.navbar.expectCurrentLocale("es");
 
-    // Form elements should render in Spanish. Fields are matched by their
-    // associated <label>, not by placeholder (placeholders are generic
-    // hints like "name@example.com", not localized copy).
+    // Fields are matched by their associated <label>, not by placeholder
+    // (placeholders are generic hints like "name@example.com").
     await expect(loginPage.heading).toHaveText("Iniciar sesión");
     await expect(page.getByLabel(/correo electrónico/i)).toBeVisible();
     await expect(page.getByLabel(/contraseña/i)).toBeVisible();
     await expect(loginPage.submitButton).toHaveText(/iniciar sesión/i);
 
-    // OAuth provider link.
-    const googleLink = page.getByRole("link", { name: /google/i });
-    await expect(googleLink).toContainText(/iniciar sesión con google/i);
-
-    // Register-page switch link (currently reads "Register Now" in English
-    // on every locale) should no longer show the English text once localized.
-    const switchLink = page.getByRole("link", { name: /register now/i });
-    await expect(switchLink).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /google/i })).toContainText(/continuar con google/i);
+    await expect(page.getByRole("link", { name: /crear una cuenta/i })).toBeVisible();
   });
 });
 
@@ -46,23 +37,14 @@ test.describe("Register form localization", () => {
 
     await registerPage.goto("de");
 
-    // Nav bar correctly localizes — confirm the locale took effect.
     await registerPage.navbar.expectCurrentLocale("de");
 
-    // Form elements should render in German. Fields are matched by their
-    // associated <label>, not by placeholder (placeholders are generic
-    // hints like "name@example.com", not localized copy).
-    await expect(registerPage.heading).toHaveText("Registrieren");
+    await expect(registerPage.heading).toHaveText("Konto erstellen");
     await expect(page.getByLabel(/e-mail-adresse/i)).toBeVisible();
     await expect(page.getByLabel(/passwort/i)).toBeVisible();
-    await expect(registerPage.submitButton).toHaveText(/registrieren/i);
+    await expect(registerPage.submitButton).toHaveText(/konto erstellen/i);
 
-    // OAuth provider link.
-    const googleLink = page.getByRole("link", { name: /google/i });
-    await expect(googleLink).toContainText(/mit google/i);
-
-    // Already-have-account link (the register page shows a link to go to login).
-    const switchLink = page.getByRole("link", { name: /bereits.*konto|anmelden/i });
-    await expect(switchLink).toBeVisible();
+    await expect(page.getByRole("link", { name: /google/i })).toContainText(/weiter mit google/i);
+    await expect(page.getByRole("link", { name: /bereits ein konto\?.*anmelden/i })).toBeVisible();
   });
 });

@@ -16,7 +16,7 @@ export class OffersPage extends BasePage {
 
   async goto(locale: Locale) {
     this.log.info("Navigating to offers dashboard", { locale });
-    await this.page.goto(`/offers?_locale=${locale}`);
+    await this.open("/offers", locale);
   }
 
   async rowCount(): Promise<number> {

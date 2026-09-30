@@ -1,14 +1,14 @@
 import { test, expect } from "../../fixtures/pages.fixture";
+import { AUTH_FILE } from "../../helpers/test-user";
 
 /**
  * Dashboard content-rendering smoke tests.
  *
- * These tests require an authenticated session (the site grants a 14-minute
- * trial window per account). The shared auth.setup.ts registers one account
- * and persists storageState; this file opts into that session.
+ * Read-only checks, so they run as the shared paid account signed in by
+ * tests/setup/auth.setup.ts.
  */
 
-test.use({ storageState: "playwright/.auth/trial-session.json" });
+test.use({ storageState: AUTH_FILE });
 
 test.describe("Offers Dashboard renders for an authenticated user", () => {
   test("TC-OFFERS-001 — Offers Dashboard renders for an authenticated user", { tag: ["@p1"] }, async ({ offersPage }) => {

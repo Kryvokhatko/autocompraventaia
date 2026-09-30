@@ -11,9 +11,12 @@ Playwright end-to-end, visual, and security-gating test automation for [autocomp
 
 ```bash
 npm install
-npx playwright install --with-deps   # first time only, installs browser binaries
+npx playwright install --with-deps chromium   # first time only, installs the browser
+cp .env.example .env                           # then fill in the test account credentials
 npx playwright test
 ```
+
+`.env` is git-ignored. It holds the shared test account (`TEST_USER_EMAIL`, `TEST_USER_PASSWORD`) and, optionally, `BASE_URL` to point the suite at another environment (defaults to the live site).
 
 ## Scripts
 
@@ -49,19 +52,46 @@ TestArtifacts/  # Exploratory walkthrough reports and formalized test-case docum
 
 `tests/` contains only spec files — Page Objects, fixtures, and other support code live outside it by design, so `testDir` globs can't accidentally pick up non-test code.
 
-## Browser & device coverage
+## Browser coverage
 
-Chromium, Firefox, WebKit, plus Pixel 5 and iPhone 12 emulation — all depend on a `setup` project that registers one disposable trial account and persists `storageState` for reuse across every project in the run (see [Authentication](#authentication) below).
+Desktop Chromium. The `chromium` project depends on a `setup` project that signs in once per run (see [Authentication](#authentication) below).
 
 ## Authentication
 
-The site grants a 14-minute free-access trial per registered account. `tests/setup/auth.setup.ts` registers a single disposable account once per run and saves its session to `playwright/.auth/trial-session.json`; specs needing an authenticated session opt in via:
+Two kinds of account, chosen by what a test does:
+
+| Test does | Account | Why |
+|---|---|---|
+| Read-only checks on signed-in pages (dashboard, analytics, payments, Stripe Checkout) | **Shared paid account**, signed in once by `tests/setup/auth.setup.ts` | No trial limit; one sign-in per run |
+| Registers, logs in/out, or edits favorites | **Disposable account** registered inside the test (`helpers/test-data.ts`) | Never modifies the shared account; always starts from the same seed data |
+
+A newly registered account only gets a ~60-second free trial before every dashboard page redirects to `/pagos` — enough for one short test, not for a run — which is why the shared session comes from a paid account.
+
+`auth.setup.ts` reads the credentials from the environment (`helpers/test-user.ts`), signs in, checks the subscription is still active (warning when under 14 days remain), and saves the session to `playwright/.auth/user.json`. Specs opt in with:
 
 ```ts
-test.use({ storageState: "playwright/.auth/trial-session.json" });
+import { AUTH_FILE } from "../../helpers/test-user";
+test.use({ storageState: AUTH_FILE });
 ```
 
-A few specs (e.g. favorites) register their own fresh account inline instead of using the shared session, when a test needs to mutate state or verify a pristine account — see the comment at the top of those files for why.
+The credentials never appear in test output: the setup step records no trace/screenshot/video, and `LoginPage.loginWithSecretCredentials` writes them into the form directly, because Playwright names `fill()` steps after the typed value and those names are stored in the HTML report that CI publishes as an artifact.
+
+Page Objects navigate through `BasePage.open()`, which fails with a clear message if the site redirects away from the requested page (expired trial, missing session) — so a test can never pass by asserting on the redirect target instead.
+
+## Known site defects
+
+Tests guarding a still-open site defect assert the **correct** behavior and are marked `test.fail(true, "Open defect D-xx: …")`. The suite stays green while the defect exists, and Playwright reports the test as an unexpected pass the day the defect is fixed — the cue to remove the marker. Currently open: D-01, D-04/D-05, D-07, D-08, D-09, D-10, D-11, D-12, D-13.
+
+An **intermittent** defect can't use `test.fail()` — the test would flip between pass and fail — so its test is quarantined with `test.fixme(true, "Quarantined — open defect D-xx …")` instead: skipped and visibly flagged in the report until the defect is fixed. Currently quarantined: D-14 (logout sometimes leaves the session active).
+
+## Screenshot baselines
+
+`tests/visual` compares against committed baselines per platform: `*-chromium-win32.png` for local Windows runs and `*-chromium-linux.png` for CI. Regenerate after an intended UI change with `npx playwright test tests/visual --no-deps --update-snapshots` locally, and for Linux inside the matching Playwright image:
+
+```bash
+docker run --rm -v "$PWD:/work" -w /work --ipc=host mcr.microsoft.com/playwright:v1.61.1-noble \
+  npx playwright test tests/visual --no-deps --update-snapshots
+```
 
 ## Tagging convention
 
@@ -83,7 +113,11 @@ Every automated test embeds its manual test-case ID (`TC-<AREA>-<NUM>`) in both 
 
 ## CI
 
-`.github/workflows/playwright.yml` runs the full suite on every push/PR to `main`/`master` and uploads the HTML report, traceability report, and JS coverage (if collected) as build artifacts.
+`.github/workflows/playwright.yml` runs the suite on every pull request and push to `main`/`master`, nightly at 05:00 UTC (the site under test changes independently of this repo), and on demand from the Actions tab. A newer push to the same branch cancels the older run.
+
+- **Secrets** (Settings → Secrets and variables → Actions): `TEST_USER_EMAIL`, `TEST_USER_PASSWORD`. Optional repository variable `BASE_URL`.
+- **On CI** the config uses 4 workers, 2 retries (a test passing only on retry is reported as flaky), traces on the first retry, screenshots on failure, a 20-minute global timeout (below the 30-minute job timeout, so reports are always written), and the `github` reporter for inline PR annotations.
+- **Artifacts**: HTML report (with traces), traceability report, and JS coverage if collected.
 
 ## Test artifacts
 

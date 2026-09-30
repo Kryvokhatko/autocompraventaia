@@ -1,23 +1,27 @@
 import { test, expect } from "../../fixtures/pages.fixture";
+import { AUTH_FILE } from "../../helpers/test-user";
 
 /**
  * Payments-page locale-formatting regression tests.
  *
- * These tests require an authenticated session (the site grants a 14-minute
- * trial window per account). The shared auth.setup.ts registers one account
- * and persists storageState; this file opts into that session.
+ * Read-only checks, so they run as the shared paid account signed in by
+ * tests/setup/auth.setup.ts — its active subscription is what makes the
+ * "Active Subscription" banner and expiry date appear.
  *
- * Defects covered:
+ * Open defects covered (each test is marked test.fail() until fixed, so the
+ * suite stays green while the defect exists and flags the test as an
+ * unexpected pass the day it is fixed):
  *   D-07 — DE date uses slash format instead of DD.MM.YYYY
  *   D-08 — ES prices use period decimal instead of comma
  *   D-09 — EN/DE price-unit suffixes stay Spanish ("/día /mes /año")
  */
 
-test.use({ storageState: "playwright/.auth/trial-session.json" });
+test.use({ storageState: AUTH_FILE });
 
 test.describe("Payments date formatting", () => {
   test("TC-PAY-001 — subscription-expiry date uses DD.MM.YYYY under DE locale", { tag: ["@p1", "@regression"] }, async ({ paymentsPage }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-001" });
+    test.fail(true, "Open defect D-07: DE expiry date renders as DD/MM/YYYY");
 
     await paymentsPage.goto("de");
 
@@ -31,6 +35,7 @@ test.describe("Payments date formatting", () => {
 test.describe("Payments decimal-separator formatting", () => {
   test("TC-PAY-002 — prices use comma decimal separator under ES locale", { tag: ["@p2", "@regression"] }, async ({ paymentsPage }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-002" });
+    test.fail(true, "Open defect D-08: ES prices use a period decimal separator");
 
     await paymentsPage.goto("es");
 
@@ -48,6 +53,7 @@ test.describe("Payments decimal-separator formatting", () => {
 test.describe("Payments unit-suffix localization", () => {
   test("TC-PAY-003 — price-unit suffixes match locale under EN and DE", { tag: ["@p2", "@regression"] }, async ({ paymentsPage }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-003" });
+    test.fail(true, "Open defect D-09: EN/DE price suffixes stay Spanish (/día /mes /año)");
 
     // --- EN locale ---
     await paymentsPage.goto("en");

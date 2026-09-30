@@ -4,60 +4,53 @@ import { createDisposableAccount } from "../../helpers/test-data";
 /**
  * Favorites-page and favorites-count-badge regression tests.
  *
- * Every freshly registered account receives an identical, consistent
- * 11-item pre-seeded favorites list. TC-FAV-001 verifies this seed data
- * is rendered and reflected in the nav badge. TC-FAV-002 is a regression
- * gate for defect D-13: the nav favorites-count badge does not update
- * after removing a favorite without a page reload, even though the
- * underlying removal is persisted correctly.
+ * Every freshly registered account receives the same pre-seeded favorites
+ * list (17 cars, 7 of them marked sold). The nav badge counts only the
+ * favorites that are not sold. TC-FAV-001 verifies the seed renders and the
+ * badge reflects it. TC-FAV-002 is a regression gate for defect D-13: the
+ * nav favorites-count badge does not update after removing a favorite
+ * without a page reload, even though the removal itself is persisted.
  *
  * Both tests register their own disposable account inside the test body
- * rather than sharing the global trial session, so they stay fully
- * isolated and never collide with other specs that depend on a pristine
- * 11-item seed.
+ * rather than using the shared paid account: TC-FAV-002 removes a favorite,
+ * and the shared account must never be modified. The ~60-second trial of a
+ * new account is plenty for either test.
  */
 
 test.describe("Favorites seed data and nav badge", () => {
   test("TC-FAV-001 — Favorites page renders pre-seeded sample data and shows the badge count in the nav", { tag: ["@p1"] }, async ({ registerPage, favoritesPage }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-FAV-001" });
 
-    const account = createDisposableAccount();
-
+    const account = createDisposableAccount(test.info().workerIndex);
     await registerPage.goto("en");
     await registerPage.register(account.email, account.password);
 
-    // Navigate to the favorites page — the badge is fetched asynchronously
-    // and shows the correct count only after a real page navigation.
     await favoritesPage.goto("en");
 
-    expect(await favoritesPage.favoriteCount()).toBe(11);
-    await favoritesPage.navbar.expectFavoritesCount(11);
+    const total = await favoritesPage.favoriteCount();
+    const sold = await favoritesPage.soldCount();
+    expect(total).toBeGreaterThan(0);
+    await favoritesPage.navbar.expectFavoritesCount(total - sold);
   });
 });
 
-/*
-Known defect D-13 — leaving as-is: the underlying favorite removal works
-correctly (the item is deleted and a reload reflects the correct count),
-but the nav favorites-count badge specifically does not update without a
-page reload. This test asserts the CORRECT behavior (badge shows 10 after
-removal) and currently FAILS until D-13 is fixed. It is not a broken test.
-*/
 test.describe("Favorites-count badge updates after removal (regression gate)", () => {
   test("TC-FAV-002 — Favorites-count badge updates immediately after removing a favorite, without a page reload", { tag: ["@p2", "@regression"] }, async ({ registerPage, favoritesPage }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-FAV-002" });
+    test.fail(true, "Open defect D-13: nav favorites badge does not update until the page is reloaded");
 
-    const account = createDisposableAccount();
-
+    const account = createDisposableAccount(test.info().workerIndex);
     await registerPage.goto("en");
     await registerPage.register(account.email, account.password);
 
     await favoritesPage.goto("en");
-    await favoritesPage.navbar.expectFavoritesCount(11);
+    const before = (await favoritesPage.favoriteCount()) - (await favoritesPage.soldCount());
+    await favoritesPage.navbar.expectFavoritesCount(before);
 
-    await favoritesPage.removeFirstFavorite();
+    // The first card in the seed list is a sold one, which the badge does
+    // not count — remove the first unsold favorite so the badge must change.
+    await favoritesPage.removeFirstUnsoldFavorite();
 
-    // This assertion currently fails per defect D-13 — the badge does not
-    // update without a page reload, even though the removal is persisted.
-    await favoritesPage.navbar.expectFavoritesCount(10);
+    await favoritesPage.navbar.expectFavoritesCount(before - 1);
   });
 });

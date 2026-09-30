@@ -13,9 +13,8 @@ import { createLogger } from "../helpers/logger";
  * source code. The primary coverage metric for this project is
  * requirements/test-condition coverage — see helpers/traceability-reporter.ts.
  *
- * Opt-in via COLLECT_JS_COVERAGE=1 (off by default — adds overhead and this
- * suite runs against a live site where every extra second matters given the
- * 14-minute trial window on authenticated tests).
+ * Opt-in via COLLECT_JS_COVERAGE=1 (off by default — it adds overhead to
+ * every test in a suite that already runs against a live site).
  */
 
 const log = createLogger("CoverageFixture");
