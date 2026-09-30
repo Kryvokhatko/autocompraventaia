@@ -181,10 +181,13 @@ export class StripeCheckoutPage {
    * label — the locators below accept both. Textbox roles are used because
    * an SVG help icon next to the CVC field carries the same aria-label.
    *
-   * Cardholder name, Address line 1, City and Postal code are required;
-   * without them "Pay" stops at client-side validation and the card number
-   * is never evaluated. They get fixed, clearly fake filler values;
-   * `opts.name` overrides the cardholder name.
+   * Cardholder name and the billing address are required; without them
+   * "Pay" stops at client-side validation and the card number is never
+   * evaluated. Which address fields appear depends on the billing country,
+   * which defaults to the visitor's location: Ukraine asks for Address line
+   * 1, City and Postal code, the US (CI runners) only for a ZIP. Each
+   * address field is therefore filled only if present, with fixed, clearly
+   * fake values valid for both; `opts.name` overrides the cardholder name.
    */
   async fillCardTestData(opts: { number: string; expiry: string; cvc: string; name?: string }) {
     const form = await this.formFrame();
@@ -196,9 +199,15 @@ export class StripeCheckoutPage {
       .or(form.getByRole("textbox", { name: /^full name$/i }))
       .first()
       .fill(opts.name ?? "QA Automation");
-    await form.getByRole("textbox", { name: "Address line 1" }).fill("1 Test Street");
-    await form.getByRole("textbox", { name: "City" }).fill("Kyiv");
-    await form.getByRole("textbox", { name: "Postal code" }).fill("01001");
+    const addressFields: [string | RegExp, string][] = [
+      ["Address line 1", "1 Test Street"],
+      ["City", "Kyiv"],
+      [/^(postal code|zip)/i, "01001"],
+    ];
+    for (const [name, value] of addressFields) {
+      const field = form.getByRole("textbox", { name });
+      if (await field.count()) await field.first().fill(value);
+    }
   }
 
   async submitPayment() {
