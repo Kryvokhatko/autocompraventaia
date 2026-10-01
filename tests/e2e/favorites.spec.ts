@@ -35,22 +35,35 @@ test.describe("Favorites seed data and nav badge", () => {
 });
 
 test.describe("Favorites-count badge updates after removal (regression gate)", () => {
-  test("TC-FAV-002 — Favorites-count badge updates immediately after removing a favorite, without a page reload", { tag: ["@p2", "@regression"] }, async ({ registerPage, favoritesPage }) => {
+  test("TC-FAV-002 — Favorites-count badge updates immediately after removing a favorite, without a page reload", { tag: ["@p2", "@regression"] }, async ({ registerPage, favoritesPage, pageApi }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-FAV-002" });
     test.fail(true, "Open defect D-13: nav favorites badge does not update until the page is reloaded");
 
-    const account = createDisposableAccount(test.info().workerIndex);
-    await registerPage.goto("en");
-    await registerPage.register(account.email, account.password);
+    await test.step("Register a disposable account", async () => {
+      const account = createDisposableAccount(test.info().workerIndex);
+      await registerPage.goto("en");
+      await registerPage.register(account.email, account.password);
+    });
 
-    await favoritesPage.goto("en");
-    const before = (await favoritesPage.favoriteCount()) - (await favoritesPage.soldCount());
-    await favoritesPage.navbar.expectFavoritesCount(before);
+    const before = await test.step("Open favorites and read the badge", async () => {
+      await favoritesPage.goto("en");
+      const unsold = (await favoritesPage.favoriteCount()) - (await favoritesPage.soldCount());
+      await favoritesPage.navbar.expectFavoritesCount(unsold);
+      return unsold;
+    });
 
     // The first card in the seed list is a sold one, which the badge does
     // not count — remove the first unsold favorite so the badge must change.
-    await favoritesPage.removeFirstUnsoldFavorite();
+    await test.step("Remove the first unsold favorite", () => favoritesPage.removeFirstUnsoldFavorite());
 
-    await favoritesPage.navbar.expectFavoritesCount(before - 1);
+    await test.step("Server reports the new count", async () => {
+      await expect
+        .poll(async () => (await (await pageApi.favorites.count()).json()).count)
+        .toBe(before - 1);
+    });
+
+    await test.step("Badge shows the new count without a reload", () =>
+      favoritesPage.navbar.expectFavoritesCount(before - 1)
+    );
   });
 });

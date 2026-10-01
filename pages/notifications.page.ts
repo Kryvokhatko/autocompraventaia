@@ -8,6 +8,9 @@ export class NotificationsPage extends BasePage {
   readonly telegramOption: Locator;
   readonly emailOption: Locator;
   readonly historyTable: Locator;
+  readonly historyColumnHeaders: Locator;
+  // Body rows: one per notification, or a single "No recent notifications" row.
+  readonly historyRows: Locator;
 
   constructor(page: Page) {
     super(page, "NotificationsPage");
@@ -18,6 +21,8 @@ export class NotificationsPage extends BasePage {
     this.telegramOption = page.getByRole("heading", { name: "Telegram", exact: true });
     this.emailOption = page.getByRole("heading", { name: "Email Notifications", exact: true });
     this.historyTable = page.getByRole("table");
+    this.historyColumnHeaders = this.historyTable.getByRole("columnheader");
+    this.historyRows = this.historyTable.getByRole("rowgroup").nth(1).getByRole("row");
   }
 
   async goto(locale: Locale) {

@@ -7,7 +7,8 @@
     "test": "playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
-    "report": "playwright show-report"
+    "report": "playwright show-report",
+    "typecheck": "tsc -p ."
   },
   "keywords": [],
   "author": "",
@@ -17,7 +18,8 @@
     "@faker-js/faker": "^10.5.0",
     "@playwright/test": "^1.61.1",
     "@types/dotenv": "^6.1.1",
-    "@types/node": "^26.1.0"
+    "@types/node": "^26.1.0",
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "dotenv": "^17.4.2"

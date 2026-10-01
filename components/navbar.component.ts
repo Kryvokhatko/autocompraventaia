@@ -50,9 +50,9 @@ export class NavbarComponent {
     this.registerLink = this.container.getByRole("link", {
       name: /create an account|crear una cuenta|konto erstellen/i,
     });
-    // Icon-only anchor with no accessible name: href="#",
-    // onclick="handleLogout(event)", title="Logout".
-    this.logoutButton = this.container.locator('[onclick*="handleLogout"]');
+    // Icon-only anchor whose only label is its title attribute ("Logout",
+    // in English on every locale).
+    this.logoutButton = this.container.getByTitle("Logout", { exact: true });
     this.trialBadge = this.container.getByRole("link", { name: /^paid\s+\d/i });
     this.favoritesCountBadge = this.container.locator("#favorites-count");
   }

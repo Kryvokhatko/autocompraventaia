@@ -114,7 +114,7 @@
     <dl class="meta">
       <dt>Last updated</dt><dd>2026-07-15</dd>
       <dt>Locales covered</dt><dd>English, Spanish, German</dd>
-      <dt>Formalized test cases</dt><dd><code>i18n_test_cases_2026-07-12.md</code>, <code>test_cases_2026-07-15.md</code></dd>
+      <dt>Formalized test cases</dt><dd><code>i18n_test_cases_2026-07-12.md</code>, <code>test_cases_2026-07-15.md</code>, <code>api_test_cases_2026-10-01.md</code></dd>
     </dl>
   </header>
 
@@ -213,7 +213,7 @@
     <h2>4. Defects</h2>
     <table class="status-table">
       <tr><th>ID</th><th>Title</th><th>Severity</th><th>Priority</th><th>Last confirmed</th></tr>
-      <tr><td><a href="#D-01"><code>D-01</code></a></td><td>Favorites-count API throws a client-side error for unauthenticated users</td><td>Medium</td><td>Medium</td><td>2026-07-15</td></tr>
+      <tr><td><a href="#D-01"><code>D-01</code></a></td><td>Favorites-count API throws a client-side error for unauthenticated users</td><td>Medium</td><td>Medium</td><td>2026-10-01</td></tr>
       <tr><td><a href="#D-02"><code>D-02</code></a></td><td>Login and Registration forms are entirely in English regardless of locale</td><td>High</td><td>High</td><td>2026-07-15</td></tr>
       <tr><td><a href="#D-03"><code>D-03</code></a></td><td>German home page has extensive untranslated Spanish content</td><td>High</td><td>High</td><td>2026-07-15</td></tr>
       <tr><td><a href="#D-04"><code>D-04</code></a></td><td>Logo image alt text is permanently in Spanish</td><td>Low</td><td>Low</td><td>2026-07-15</td></tr>
@@ -230,7 +230,7 @@
       <tr><td><a href="#D-15"><code>D-15</code></a></td><td>Logout frequently leaves the session active</td><td>High</td><td>High</td><td>2026-09-30</td></tr>
     </table>
 
-    <div class="defect-card sev-medium" id="D-01"><h4>D-01 — Favorites-Count API Throws a Client-Side Error for Unauthenticated Users</h4><div class="sev-row"><span class="pill sev-medium">Severity: Medium</span><span class="pill sev-medium">Priority: Medium</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd>All public pages, all locales, unauthenticated</dd><dt>Steps</dt><dd>Load any page in a logged-out session, open the browser console</dd><dt>Expected</dt><dd>The favorites-count endpoint returns valid data, or the client skips the call while unauthenticated</dd><dt>Actual</dt><dd>The endpoint returns an HTML login-redirect page instead of JSON; the client attempts to parse it as JSON and throws a syntax error.</dd></dl></div>
+    <div class="defect-card sev-medium" id="D-01"><h4>D-01 — Favorites-Count API Throws a Client-Side Error for Unauthenticated Users</h4><div class="sev-row"><span class="pill sev-medium">Severity: Medium</span><span class="pill sev-medium">Priority: Medium</span><span class="pill date">Last confirmed: 2026-10-01</span></div><dl class="fields"><dt>Environment</dt><dd>All public pages, all locales, unauthenticated</dd><dt>Steps</dt><dd>Load any page in a logged-out session, open the browser console</dd><dt>Expected</dt><dd>The favorites-count endpoint returns valid data, or the client skips the call while unauthenticated</dd><dt>Actual</dt><dd>The endpoint returns an HTML login-redirect page instead of JSON; the client attempts to parse it as JSON and throws a syntax error.</dd><dt>Root cause</dt><dd>The page calls <code>fetch('/api/favorites/count')</code> without an <code>Accept</code> header. For such requests the endpoint answers <code>302</code> to <code>/login</code>; the browser follows it, receives the login page with a success status, and the client parses that HTML as JSON. When the request does send <code>Accept: application/json</code>, the endpoint answers <code>401</code> — but with the plain-text body "Authentication required" served as <code>text/html</code>.</dd><dt>Suggested fix</dt><dd>Skip the call when no user is signed in, or send <code>Accept: application/json</code> and check <code>response.ok</code> before parsing; on the server, answer unauthenticated API requests with <code>401</code> and a JSON error body rather than a redirect.</dd></dl></div>
 
     <div class="defect-card sev-high" id="D-02"><h4>D-02 — Login and Registration Forms Are Entirely in English Regardless of Locale</h4><div class="sev-row"><span class="pill sev-high">Severity: High</span><span class="pill sev-high">Priority: High</span><span class="pill date">Last confirmed: 2026-07-15</span></div><dl class="fields"><dt>Environment</dt><dd><code>/login</code>, <code>/register</code>, Spanish and German locales</dd><dt>Steps</dt><dd>Navigate to either form under the Spanish or German locale; observe the heading, labels, button, and links</dd><dt>Expected</dt><dd>Form content matches the locale, consistent with the correctly-localized nav bar</dd><dt>Actual</dt><dd>The nav bar reads correctly, but the form itself always shows English text — heading, labels, button, and links.</dd></dl></div>
 
@@ -262,13 +262,13 @@
 
   <section id="traceability">
     <h2>5. Test-Artifact Traceability Index</h2>
-    <p style="color:var(--text-muted); font-size:0.9rem;">Full test case text, technique, preconditions, steps, and expected/actual results live in <code>i18n_test_cases_2026-07-12.md</code> and <code>test_cases_2026-07-15.md</code>. This index maps each feature area to its condition and case IDs only.</p>
+    <p style="color:var(--text-muted); font-size:0.9rem;">Full test case text, technique, preconditions, steps, and expected/actual results live in <code>i18n_test_cases_2026-07-12.md</code>, <code>test_cases_2026-07-15.md</code> and <code>api_test_cases_2026-10-01.md</code>. This index maps each feature area to its condition and case IDs only.</p>
     <table class="trace">
       <tr><th>Feature</th><th>Test Conditions</th><th>Test Cases</th></tr>
       <tr><td>Home / Landing Page localization</td><td><code>TCOND-03</code></td><td><code>TC-HOME-001</code></td></tr>
       <tr><td>Registration &amp; Login</td><td><code>TCOND-01, TCOND-02, TCOND-09, TCOND-10, TCOND-12</code></td><td><code>TC-AUTH-001, TC-AUTH-002, TC-AUTH-003, TC-AUTH-004, TC-AUTH-005, TC-AUTH-007</code></td></tr>
       <tr><td>Logout (<a href="#D-15">D-15</a>)</td><td><code>TCOND-11</code></td><td><code>TC-AUTH-006</code></td></tr>
-      <tr><td>Favorites-count API error handling</td><td><code>TCOND-04</code></td><td><code>TC-API-001</code></td></tr>
+      <tr><td>Favorites-count API error handling</td><td><code>TCOND-04</code>, <code>TCOND-31</code>, <code>TCOND-32</code>, <code>TCOND-33</code></td><td><code>TC-API-001</code>, <code>TC-API-002</code>, <code>TC-API-003</code>, <code>TC-API-004</code></td></tr>
       <tr><td>Branding (logo/footer/feature-image alt text)</td><td><code>TCOND-05</code></td><td><code>TC-BRAND-001</code></td></tr>
       <tr><td>Payments — date/decimal/unit-suffix formatting</td><td><code>TCOND-06, TCOND-07, TCOND-08, TCOND-16</code></td><td><code>TC-PAY-001, TC-PAY-002, TC-PAY-003, TC-PAY-004</code></td></tr>
       <tr><td>Analytics page</td><td><code>TCOND-13, TCOND-15</code></td><td><code>TC-STATS-001, TC-STATS-002</code></td></tr>

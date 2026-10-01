@@ -1,4 +1,4 @@
-import { expect, type Frame, type Locator, type Page } from "@playwright/test";
+import { expect, type Frame, type Locator, type Page, type Response } from "@playwright/test";
 import { createLogger, type Logger } from "../helpers/logger";
 
 /**
@@ -210,9 +210,19 @@ export class StripeCheckoutPage {
     }
   }
 
-  async submitPayment() {
+  /**
+   * Clicks Pay and waits up to `timeoutMs` for Stripe's confirm request
+   * (`/v1/payment_pages/<session>/confirm`) to be answered. Returns that
+   * response, or null when none is sent: Stripe's bot detection drops some
+   * automated submissions without sending it.
+   */
+  async submitPayment(timeoutMs = 15_000): Promise<Response | null> {
     this.log.info("Submitting payment");
+    const confirm = this.page
+      .waitForResponse((r) => /\/v1\/payment_pages\/[^/]+\/confirm/.test(r.url()), { timeout: timeoutMs })
+      .catch(() => null);
     await (await this.payButton()).click();
+    return confirm;
   }
 
   async goBackToSite() {

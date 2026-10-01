@@ -25,6 +25,12 @@ export function createDisposableEmail(workerIndex = 0): string {
   return `qa-taf-w${workerIndex}-${stamp}-${random}@mailinator.com`;
 }
 
+/** Card expiry in MM/YY format, December of next year — always in the future. */
+export function futureCardExpiry(): string {
+  const year = (new Date().getFullYear() + 1) % 100;
+  return `12/${String(year).padStart(2, "0")}`;
+}
+
 export function createDisposableAccount(workerIndex = 0): DisposableAccount {
   return {
     email: createDisposableEmail(workerIndex),

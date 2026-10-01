@@ -1,12 +1,11 @@
 import { test, expect } from "../../fixtures/pages.fixture";
-import type { Locale } from "../../pages/base.page";
 
 /**
  * Branding-element localization regression test.
  *
  * The footer copyright line and the six feature-section image alt texts on
- * the home page stay in Spanish regardless of locale (open defects D-04,
- * D-05). This test asserts the correct per-locale text for EN and DE and is
+ * the home page stay in Spanish regardless of locale (open defects D-05,
+ * D-06). This test asserts the correct per-locale text for EN and DE and is
  * marked test.fail() until they are fixed.
  *
  * The logo is a decorative brand mark with an empty alt attribute (the
@@ -37,13 +36,13 @@ const FEATURE_ALTS: Record<"en" | "de", string[]> = {
   ],
 };
 
-const LOCALES: Locale[] = ["en", "de"];
+const LOCALES = ["en", "de"] as const;
 
 test.describe("Branding localization", () => {
   for (const locale of LOCALES) {
     test(`TC-BRAND-001 — branding elements localize under ${locale.toUpperCase()} locale`, { tag: ["@p2", "@regression"] }, async ({ homePage, page }) => {
       test.info().annotations.push({ type: "test-case", description: "TC-BRAND-001" });
-      test.fail(true, "Open defects D-04/D-05: footer copyright and feature image alt text stay Spanish");
+      test.fail(true, "Open defects D-05/D-06: footer copyright and feature image alt text stay Spanish");
 
       await homePage.goto(locale);
 

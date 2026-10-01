@@ -19,10 +19,10 @@ export class PaymentsPage extends BasePage {
   // ("Diario"/"Mensual"/"Anual") regardless of the site's active locale —
   // the modal's own copy isn't localized, unlike the rest of the page.
   readonly selectedPlanSummary: Locator;
-  // Confirmed live via DOM inspection: each payment-method card carries
-  // data-method="<id>" when implemented; unimplemented methods (PayPal,
-  // Bank Transfer) instead carry a payment-method-disabled class and no
-  // data-method attribute at all.
+  // Payment-method cards have no role or accessible name; each is a
+  // `.payment-method-option`. Implemented methods carry data-method="<id>";
+  // unavailable ones (PayPal, Bank Transfer) show a visible "Coming soon"
+  // label, which is what identifies them here.
   readonly stripeMethodOption: Locator;
   readonly disabledPaymentMethodOptions: Locator;
 
@@ -34,7 +34,9 @@ export class PaymentsPage extends BasePage {
     this.paymentMethodModalCloseButton = this.paymentMethodModal.getByRole("button", { name: "Close" });
     this.selectedPlanSummary = this.paymentMethodModal.getByText(/Selected Plan/i).locator("..");
     this.stripeMethodOption = this.paymentMethodModal.locator('[data-method="stripe"]');
-    this.disabledPaymentMethodOptions = this.paymentMethodModal.locator(".payment-method-disabled");
+    this.disabledPaymentMethodOptions = this.paymentMethodModal
+      .locator(".payment-method-option")
+      .filter({ hasText: "Coming soon" });
   }
 
   async goto(locale: Locale) {

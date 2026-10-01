@@ -39,12 +39,22 @@ test.describe("Login", () => {
     // and traces. Its session is dropped by clearing cookies rather than via
     // the site's logout, which currently leaves the session active (D-15).
     const account = createDisposableAccount(test.info().workerIndex);
-    await registerPage.goto("en");
-    await registerPage.register(account.email, account.password);
-    await page.context().clearCookies();
+    await test.step("Register a disposable account", async () => {
+      await registerPage.goto("en");
+      await registerPage.register(account.email, account.password);
+    });
 
-    await loginPage.goto("en");
-    await loginPage.login(account.email, account.password);
+    await test.step("Drop the session", async () => {
+      // Leave the dashboard first: a request it still has in flight could
+      // set the session cookie again after the cookies are cleared.
+      await page.goto("about:blank");
+      await page.context().clearCookies();
+    });
+
+    await test.step("Log in with the same credentials", async () => {
+      await loginPage.goto("en");
+      await loginPage.login(account.email, account.password);
+    });
 
     // Authenticated and redirected into the dashboard.
     await expect(page).toHaveURL(/\/offers/, { timeout: 15_000 });
@@ -109,13 +119,13 @@ test.describe("Logout", () => {
     // it is quarantined instead until the defect is fixed.
     test.fixme(true, "Quarantined — open defect D-15 (intermittent): session often stays active after logout");
 
-    // Register to get an authenticated session.
     const account = createDisposableAccount(test.info().workerIndex);
-    await registerPage.goto("en");
-    await registerPage.register(account.email, account.password);
+    await test.step("Register a disposable account", async () => {
+      await registerPage.goto("en");
+      await registerPage.register(account.email, account.password);
+    });
 
-    // Log out.
-    await registerPage.navbar.logout();
+    await test.step("Log out", () => registerPage.navbar.logout());
 
     // Attempt to reach a protected page — should redirect to login.
     await page.goto("/offers");

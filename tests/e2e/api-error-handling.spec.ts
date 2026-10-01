@@ -21,31 +21,24 @@ const LOCALES: Locale[] = ["en", "es", "de"];
 
 test.describe("API error handling", () => {
   for (const locale of LOCALES) {
-    test(`TC-API-001 — /api/favorites/count does not error on unauthenticated load (locale=${locale})`, { tag: ["@p1", "@regression"] }, async ({ page }) => {
+    test(`TC-API-001 — /api/favorites/count does not error on unauthenticated load (locale=${locale})`, { tag: ["@p1", "@regression"] }, async ({ homePage, page }) => {
       test.info().annotations.push({ type: "test-case", description: "TC-API-001" });
       test.fail(true, "Open defect D-01: favorites-count JSON-parse error logged for unauthenticated visitors");
 
-      const consoleErrors: string[] = [];
-
       // The defect surfaces as a caught-and-logged console.error, not an
-      // uncaught exception — listen on "console", not "pageerror".
-      page.on("console", (msg) => {
-        if (msg.type() === "error") consoleErrors.push(msg.text());
-      });
+      // uncaught exception — so wait on "console", not "pageerror". The
+      // error is logged within a second or two of load while the defect
+      // exists; 5s is the observation window once it is fixed.
+      const favoritesError = page
+        .waitForEvent("console", {
+          predicate: (msg) => msg.type() === "error" && /favorites|json/i.test(msg.text()),
+          timeout: 5_000,
+        })
+        .then((msg) => msg.text(), () => null);
 
-      // Navigate unauthenticated — the home page triggers the favorites-count
-      // call. Using direct page.goto because this test does not need a Page
-      // Object fixture; it inspects raw console/network behavior.
-      await page.goto(`/?_locale=${locale}`);
+      await homePage.goto(locale);
 
-      // Wait for the favorites endpoint to resolve (or fail).
-      await page.waitForLoadState("networkidle");
-
-      // Assert no favorites/JSON-parse error was logged.
-      const favoritesErrors = consoleErrors.filter((text) =>
-        /favorites/i.test(text) || /json/i.test(text)
-      );
-      expect(favoritesErrors).toHaveLength(0);
+      expect(await favoritesError, "favorites-count error logged on page load").toBeNull();
     });
   }
 });

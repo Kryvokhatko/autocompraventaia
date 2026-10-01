@@ -1,5 +1,9 @@
 import { test, expect } from "../../fixtures/pages.fixture";
 import { AUTH_FILE, getTestUser } from "../../helpers/test-user";
+import { futureCardExpiry } from "../../helpers/test-data";
+import { expectNoRequest } from "../../helpers/network";
+import type { PaymentsPage } from "../../pages/payments.page";
+import type { StripeCheckoutPage } from "../../pages/stripe-checkout.page";
 
 /**
  * Payments payment-method selection + Stripe Checkout flow tests
@@ -20,6 +24,25 @@ import { AUTH_FILE, getTestUser } from "../../helpers/test-user";
  */
 
 test.use({ storageState: AUTH_FILE });
+
+// Stripe's published test card numbers.
+const TEST_CARD = {
+  succeeds: "4242424242424242",
+  declined: "4000000000000002",
+};
+
+const STRIPE_TEST_MODE_REQUIRED =
+  "Requires Stripe test-mode keys (pk_test_/cs_test_) — this environment runs on LIVE Stripe keys. " +
+  "Set STRIPE_TEST_MODE=true once a test-mode environment is available.";
+
+async function openStripeCheckout(paymentsPage: PaymentsPage, stripeCheckoutPage: StripeCheckoutPage) {
+  await test.step("Open Stripe Checkout for the daily plan", async () => {
+    await paymentsPage.goto("en");
+    await paymentsPage.openPaymentMethodModal("daily");
+    await paymentsPage.chooseStripe();
+    await stripeCheckoutPage.waitForLoad();
+  });
+}
 
 test.describe("Payments payment-method selection and Stripe Checkout", () => {
   test("TC-PAY-005 — payment-method modal echoes the selected plan's name and price", { tag: ["@critical", "@p0", "@regression"] }, async ({ paymentsPage }) => {
@@ -51,16 +74,12 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
     const combined = (await paymentsPage.disabledPaymentMethodOptions.allInnerTexts()).join(" ");
     expect(combined).toContain("PayPal");
     expect(combined).toContain("Bank Transfer");
-    expect(combined).toContain("Coming soon");
   });
 
   test("TC-PAY-007 — selecting Stripe creates a checkout session and redirects", { tag: ["@critical", "@p0", "@regression"] }, async ({ paymentsPage, stripeCheckoutPage, page }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-007" });
 
-    await paymentsPage.goto("en");
-    await paymentsPage.openPaymentMethodModal("daily");
-    await paymentsPage.chooseStripe();
-    await stripeCheckoutPage.waitForLoad();
+    await openStripeCheckout(paymentsPage, stripeCheckoutPage);
 
     // Do not proceed past this redirect: this Stripe Checkout instance runs
     // on LIVE keys, so no card submission is performed in this test.
@@ -71,10 +90,7 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
   test("TC-PAY-008 — Stripe Checkout defaults to the visitor's local currency rather than the EUR price shown on-site", { tag: ["@p1"] }, async ({ paymentsPage, stripeCheckoutPage }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-008" });
 
-    await paymentsPage.goto("en");
-    await paymentsPage.openPaymentMethodModal("daily");
-    await paymentsPage.chooseStripe();
-    await stripeCheckoutPage.waitForLoad();
+    await openStripeCheckout(paymentsPage, stripeCheckoutPage);
 
     // Documents current behavior, NOT an asserted-correct expectation — see
     // R-PAY-02 in TestArtifacts/test_cases_2026-07-15.md. Checkout converts
@@ -89,16 +105,13 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
   test("TC-PAY-009 — switching currency recalculates the amount and updates wallet availability", { tag: ["@p1", "@regression"] }, async ({ paymentsPage, stripeCheckoutPage }, testInfo) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-009" });
 
-    await paymentsPage.goto("en");
-    await paymentsPage.openPaymentMethodModal("daily");
-    await paymentsPage.chooseStripe();
-    await stripeCheckoutPage.waitForLoad();
+    await openStripeCheckout(paymentsPage, stripeCheckoutPage);
 
     // Starts in the visitor's local currency (see TC-PAY-008).
     const localLine = await stripeCheckoutPage.lineItemText();
     expect(localLine).not.toContain("€");
 
-    await stripeCheckoutPage.switchToEuro();
+    await test.step("Switch Checkout to EUR", () => stripeCheckoutPage.switchToEuro());
 
     const eurLine = await stripeCheckoutPage.lineItemText();
     expect(eurLine).toContain("€");
@@ -117,10 +130,7 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
   test("TC-PAY-010 — Stripe Checkout's pre-filled email matches the authenticated user's account email", { tag: ["@critical", "@p0", "@regression"] }, async ({ paymentsPage, stripeCheckoutPage }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-010" });
 
-    await paymentsPage.goto("en");
-    await paymentsPage.openPaymentMethodModal("daily");
-    await paymentsPage.chooseStripe();
-    await stripeCheckoutPage.waitForLoad();
+    await openStripeCheckout(paymentsPage, stripeCheckoutPage);
 
     // The signed-in account is the shared test user, so its email is known
     // from the environment and can be compared directly.
@@ -134,48 +144,26 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
     await paymentsPage.goto("en");
     await paymentsPage.openPaymentMethodModal("daily");
 
-    // Watch for the checkout-session request BEFORE closing, so we can prove
-    // none fired (closing must not create a Stripe checkout session).
-    const createLinkRequests: string[] = [];
-    page.on("request", (request) => {
-      if (request.url().includes("/api/payments/create-link")) {
-        createLinkRequests.push(request.url());
-      }
+    await test.step("Close the modal without choosing a method", async () => {
+      // Watching starts before closing, so a create-link request fired by
+      // the close itself is caught.
+      const noCheckoutSession = expectNoRequest(page, "/api/payments/create-link", 2_000);
+      await paymentsPage.closePaymentMethodModal();
+      await expect(paymentsPage.paymentMethodModal).toBeHidden();
+      await noCheckoutSession;
     });
-
-    await paymentsPage.closePaymentMethodModal();
-    await expect(paymentsPage.paymentMethodModal).toBeHidden();
-
-    // Brief wait so any in-flight create-link request would have surfaced
-    // before we assert the list stayed empty.
-    await page.waitForTimeout(1000);
-
-    expect(createLinkRequests).toEqual([]);
   });
 
   test("TC-PAY-012 — successful payment via a Stripe test card activates/extends the subscription", { tag: ["@critical", "@p0"] }, async ({ paymentsPage, stripeCheckoutPage }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-012" });
+    test.skip(process.env.STRIPE_TEST_MODE !== "true", STRIPE_TEST_MODE_REQUIRED);
 
-    test.skip(process.env.STRIPE_TEST_MODE !== "true",
-      "Requires Stripe test-mode keys (pk_test_/cs_test_) — this environment runs on LIVE Stripe " +
-      "keys; see TC-PAY-012 in TestArtifacts/test_cases_2026-07-15.md. Set STRIPE_TEST_MODE=true " +
-      "once a test-mode environment is available."
-    );
+    await openStripeCheckout(paymentsPage, stripeCheckoutPage);
 
-    await paymentsPage.goto("en");
-    await paymentsPage.openPaymentMethodModal("daily");
-    await paymentsPage.chooseStripe();
-    await stripeCheckoutPage.waitForLoad();
-
-    // fillCardTestData is NOT independently verified against the live DOM —
-    // see the caveat on StripeCheckoutPage.fillCardTestData.
-    await stripeCheckoutPage.fillCardTestData({
-      number: "4242424242424242",
-      expiry: "12/34",
-      cvc: "123",
-      name: "QA Automation",
+    await test.step("Pay with a test card that succeeds", async () => {
+      await stripeCheckoutPage.fillCardTestData({ number: TEST_CARD.succeeds, expiry: futureCardExpiry(), cvc: "123" });
+      await stripeCheckoutPage.submitPayment();
     });
-    await stripeCheckoutPage.submitPayment();
 
     await paymentsPage.goto("en");
     await expect(paymentsPage.activeSubscriptionBanner).toBeVisible({ timeout: 15000 });
@@ -183,25 +171,14 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
 
   test("TC-PAY-013 — a declined card leaves the subscription state unchanged", { tag: ["@critical", "@p0"] }, async ({ paymentsPage, stripeCheckoutPage, page }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-013" });
+    test.skip(process.env.STRIPE_TEST_MODE !== "true", STRIPE_TEST_MODE_REQUIRED);
 
-    test.skip(process.env.STRIPE_TEST_MODE !== "true",
-      "Requires Stripe test-mode keys (pk_test_/cs_test_) — this environment runs on LIVE Stripe " +
-      "keys; see TC-PAY-013 in TestArtifacts/test_cases_2026-07-15.md. Set STRIPE_TEST_MODE=true " +
-      "once a test-mode environment is available."
-    );
+    await openStripeCheckout(paymentsPage, stripeCheckoutPage);
 
-    await paymentsPage.goto("en");
-    await paymentsPage.openPaymentMethodModal("daily");
-    await paymentsPage.chooseStripe();
-    await stripeCheckoutPage.waitForLoad();
-
-    await stripeCheckoutPage.fillCardTestData({
-      number: "4000000000000002",
-      expiry: "12/34",
-      cvc: "123",
-      name: "QA Automation",
+    await test.step("Pay with a test card that is declined", async () => {
+      await stripeCheckoutPage.fillCardTestData({ number: TEST_CARD.declined, expiry: futureCardExpiry(), cvc: "123" });
+      await stripeCheckoutPage.submitPayment();
     });
-    await stripeCheckoutPage.submitPayment();
 
     // Stripe's generic decline test card surfaces a decline/error message.
     // "invalid" is included too: this card number is only guaranteed to
@@ -217,13 +194,12 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
   test("TC-PAY-014 — abandoning Stripe Checkout mid-session leaves no dangling state", { tag: ["@critical", "@p0", "@regression"] }, async ({ paymentsPage, stripeCheckoutPage, page }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-014" });
 
-    await paymentsPage.goto("en");
-    await paymentsPage.openPaymentMethodModal("daily");
-    await paymentsPage.chooseStripe();
-    await stripeCheckoutPage.waitForLoad();
+    await openStripeCheckout(paymentsPage, stripeCheckoutPage);
 
-    await stripeCheckoutPage.goBackToSite();
-    await page.waitForURL(/autocompraventaia\.es/, { timeout: 15000 });
+    await test.step("Go back to the site from Checkout", async () => {
+      await stripeCheckoutPage.goBackToSite();
+      await page.waitForURL(/autocompraventaia\.es/, { timeout: 15000 });
+    });
 
     // Verifying no dangling charge/session exists on Stripe's side is out of
     // scope for browser-driven automation (would need Stripe dashboard/API
@@ -235,35 +211,33 @@ test.describe("Payments payment-method selection and Stripe Checkout", () => {
   test("TC-PAY-015 — production Stripe Checkout rejects a well-known Stripe test card", { tag: ["@critical", "@p0", "@regression"] }, async ({ paymentsPage, stripeCheckoutPage, page }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-PAY-015" });
 
-    await paymentsPage.goto("en");
-    await paymentsPage.openPaymentMethodModal("daily");
-    await paymentsPage.chooseStripe();
-    await stripeCheckoutPage.waitForLoad();
+    await openStripeCheckout(paymentsPage, stripeCheckoutPage);
 
     // Safe to run against the live account by design: Stripe rejects its own
     // test card numbers (4242 4242 4242 4242) outside test mode, so this
     // never risks a real charge — a cheap guard against ever accidentally
     // deploying test-mode keys to production. See R-PAY-03 in
     // TestArtifacts/test_cases_2026-07-15.md.
-    await stripeCheckoutPage.fillCardTestData({
-      number: "4242424242424242",
-      expiry: "12/34",
-      cvc: "123",
+    const confirmResponse = await test.step("Pay with a Stripe test card", async () => {
+      await stripeCheckoutPage.fillCardTestData({ number: TEST_CARD.succeeds, expiry: futureCardExpiry(), cvc: "123" });
+      return stripeCheckoutPage.submitPayment();
     });
-    await stripeCheckoutPage.submitPayment();
 
-    // Scope: submitting this card does not produce a visible declined/invalid
-    // message — the Pay button returns to its idle state with no on-page
-    // error. Stripe's bot detection (invisible hCaptcha, HumanSecurity)
-    // appears to drop automated submissions silently, so a specific error
-    // message can't be asserted from outside Stripe. The assertion is the
-    // invariant R-PAY-03 needs: a live-mode test-card submission never
-    // reaches a successful/confirmed state. There is no event marking
-    // "Stripe has finished processing", hence the fixed 5s settle before
-    // checking. Revisit if Stripe dashboard/API access becomes available.
-    await page.waitForTimeout(5000);
-    await expect(page).not.toHaveURL(/checkout\.stripe\.com\/.*success/i);
+    // Two outcomes occur on this live-mode session: Stripe answers the
+    // confirm request with a 4xx (the live account rejects the test card),
+    // or — for some automated submissions — its bot detection drops the
+    // submission and no confirm request is sent. Neither may end in a
+    // successful payment.
+    test.info().annotations.push({
+      type: "stripe-confirm",
+      description: confirmResponse ? `HTTP ${confirmResponse.status()}` : "not sent (dropped by Stripe bot detection)",
+    });
+    if (confirmResponse) {
+      expect(confirmResponse.status(), "Stripe should reject a test card on a live-mode session").toBeGreaterThanOrEqual(400);
+      expect(confirmResponse.status()).toBeLessThan(500);
+    }
+    await expect(page).not.toHaveURL(/success/i);
     await expect(page.getByRole("heading", { name: /success|confirmed|thank you/i })).not.toBeVisible();
-    await expect(await stripeCheckoutPage.payButton()).toBeVisible();
+    await expect(await stripeCheckoutPage.payButton()).toBeEnabled();
   });
 });

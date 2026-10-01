@@ -16,8 +16,15 @@ test.describe("Offers Dashboard renders for an authenticated user", () => {
 
     await offersPage.goto("en");
 
-    await expect(offersPage.listingTable).toBeVisible();
-    await expect(offersPage.rowCount()).resolves.toBeGreaterThan(0);
+    // Waits past the table's initial "Loading..." row for real listings.
+    await expect(offersPage.listingRows.first()).toBeVisible();
+    expect(await offersPage.rowCount()).toBeGreaterThan(0);
+
+    const listing = await offersPage.firstListing();
+    expect(listing.make).not.toBe("");
+    // Prices read like "13.990 €", with a non-breaking space before the symbol.
+    expect(listing.priceDe).toMatch(/^\d{1,3}(\.\d{3})*\s€$/);
+    expect(listing.priceEs).toMatch(/^\d{1,3}(\.\d{3})*\s€$/);
   });
 });
 
@@ -39,6 +46,9 @@ test.describe("Top Sales ranking page renders for an authenticated user", () => 
     await topSalesPage.goto("en");
 
     await expect(topSalesPage.heading).toBeVisible();
+    // Waits past the table's initial "Loading..." row for ranked entries.
+    await expect(topSalesPage.rankingRows.first()).toBeVisible();
+    await expect(topSalesPage.rankingRows.first()).toContainText(/^\s*\d+\s/);
   });
 });
 
@@ -51,6 +61,8 @@ test.describe("Notifications settings page renders for an authenticated user", (
     await expect(notificationsPage.heading).toBeVisible();
     await expect(notificationsPage.telegramOption).toBeVisible();
     await expect(notificationsPage.emailOption).toBeVisible();
-    await expect(notificationsPage.historyTable).toBeVisible();
+    await expect(notificationsPage.historyColumnHeaders).toHaveText(["Date", "Photo", "Car", "Message"]);
+    // Either one row per notification or the single empty-state row.
+    await expect(notificationsPage.historyRows.first()).toBeVisible();
   });
 });

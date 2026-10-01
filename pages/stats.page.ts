@@ -20,14 +20,17 @@ export class StatsPage extends BasePage {
   readonly navbar: NavbarComponent;
   readonly heading: Locator;
   readonly calendarView: Locator;
+  // Icon-only chevron button with no accessible name, identified by its id.
+  readonly previousMonthButton: Locator;
 
   constructor(page: Page) {
     super(page, "StatsPage");
     this.navbar = new NavbarComponent(page);
     this.heading = page.getByRole("heading", { name: /analytics.*benefit statistics/i });
-    // Confirmed live: the default-selected Calendar tab's panel is headed
-    // "Sales Calendar" (level 4).
+    // The default-selected Calendar tab's panel is headed "Sales Calendar"
+    // (level 4) and opens on the current month.
     this.calendarView = page.getByRole("heading", { name: /sales calendar/i });
+    this.previousMonthButton = page.locator("#prevMonth");
   }
 
   async goto(locale: Locale) {

@@ -2,7 +2,7 @@
 
 **Last updated:** 2026-07-15
 **Locales covered:** English, Spanish, German
-**Formalized test cases:** `TestArtifacts/i18n_test_cases_2026-07-12.md`, `TestArtifacts/test_cases_2026-07-15.md`
+**Formalized test cases:** `TestArtifacts/i18n_test_cases_2026-07-12.md`, `TestArtifacts/test_cases_2026-07-15.md`, `TestArtifacts/api_test_cases_2026-10-01.md`
 
 ---
 
@@ -105,7 +105,7 @@ Usability/UX observations that aren't necessarily wrong, just worth the site own
 
 | ID | Title | Severity | Priority | Last confirmed |
 |---|---|---|---|---|
-| D-01 | Favorites-count API throws a client-side error for unauthenticated users | Medium | Medium | 2026-07-15 |
+| D-01 | Favorites-count API throws a client-side error for unauthenticated users | Medium | Medium | 2026-10-01 |
 | D-02 | Login and Registration forms are entirely in English regardless of locale | High | High | 2026-07-15 |
 | D-03 | German home page has extensive untranslated Spanish content | High | High | 2026-07-15 |
 | D-04 | Logo image alt text is permanently in Spanish | Low | Low | 2026-07-15 |
@@ -126,6 +126,8 @@ Environment: all public pages, all locales, unauthenticated.
 Steps: load any page in a logged-out session, open the browser console.
 Expected: the favorites-count endpoint returns valid data, or the client skips the call while unauthenticated.
 Actual: the endpoint returns an HTML login-redirect page instead of JSON; the client attempts to parse it as JSON and throws `SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON`.
+Root cause (confirmed at the API level, 2026-10-01): the page calls `fetch('/api/favorites/count')` without an `Accept` header. For such requests the endpoint answers `302` to `/login`; the browser follows it, receives the login page with a success status, and the client parses that HTML as JSON. When the request does send `Accept: application/json`, the endpoint answers `401` — but with the plain-text body "Authentication required" served as `text/html`.
+Suggested fix: skip the call when no user is signed in, or send `Accept: application/json` and check `response.ok` before parsing; on the server, answer unauthenticated API requests with `401` and a JSON error body rather than a redirect.
 
 **D-02 — Login and Registration Forms Are Entirely in English Regardless of Locale**
 Environment: `/login`, `/register`, Spanish and German locales.
@@ -208,14 +210,14 @@ Suggested fix: have `/logout` expire the `BEARER` cookie server-side (a `Set-Coo
 
 ## 5. Test-Artifact Traceability Index
 
-Full test case text, technique, preconditions, steps, and expected/actual results live in `i18n_test_cases_2026-07-12.md` and `test_cases_2026-07-15.md`. This index maps each feature area to its condition and case IDs only.
+Full test case text, technique, preconditions, steps, and expected/actual results live in `i18n_test_cases_2026-07-12.md`, `test_cases_2026-07-15.md` and `api_test_cases_2026-10-01.md`. This index maps each feature area to its condition and case IDs only.
 
 | Feature | Test Conditions | Test Cases |
 |---|---|---|
 | Home / Landing Page localization | TCOND-03 | TC-HOME-001 |
 | Registration & Login | TCOND-01, TCOND-02, TCOND-09, TCOND-10, TCOND-12 | TC-AUTH-001, TC-AUTH-002, TC-AUTH-003, TC-AUTH-004, TC-AUTH-005, TC-AUTH-007 |
 | Logout (D-15) | TCOND-11 | TC-AUTH-006 |
-| Favorites-count API error handling | TCOND-04 | TC-API-001 |
+| Favorites-count API error handling | TCOND-04, TCOND-31, TCOND-32, TCOND-33 | TC-API-001, TC-API-002, TC-API-003, TC-API-004 |
 | Branding (logo/footer/feature-image alt text) | TCOND-05 | TC-BRAND-001 |
 | Payments — date/decimal/unit-suffix formatting | TCOND-06, TCOND-07, TCOND-08, TCOND-16 | TC-PAY-001, TC-PAY-002, TC-PAY-003, TC-PAY-004 |
 | Analytics page | TCOND-13, TCOND-15 | TC-STATS-001, TC-STATS-002 |

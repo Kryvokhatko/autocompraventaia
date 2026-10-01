@@ -26,6 +26,7 @@ npx playwright test
 | `npm run test:headed` | Run with visible browsers |
 | `npm run test:ui` | Run in Playwright's UI mode |
 | `npm run report` | Open the last HTML report |
+| `npm run typecheck` | Type-check all TypeScript (also the first check in CI) |
 
 Common filtered runs:
 
@@ -41,12 +42,14 @@ npx playwright test tests/e2e/auth-flows.spec.ts # single file
 ```
 pages/          # Page Objects — one class per page
 components/     # Shared UI pieces reused across pages (navbar, etc.)
-fixtures/       # Wires Page Objects into the `test` object; optional JS-coverage collection
-helpers/        # Logger, disposable test-data factory, traceability reporter, manual test-case inventory
+api/            # API clients — one class per endpoint group, grouped by SiteApi
+fixtures/       # Wires Page Objects and API clients into the `test` object; optional JS-coverage collection
+helpers/        # Logger, test user and disposable test data, network assertions, traceability reporter, test-case inventory
 tests/
-├── e2e/         # Functional specs
+├── e2e/         # Functional specs (browser)
+├── api/         # API specs (HTTP only, plus a UI cross-check where useful)
 ├── visual/      # Screenshot-diff specs
-└── setup/       # Auth bootstrap (registers one disposable trial account, shared across projects)
+└── setup/       # Signs in the shared paid account once per run and saves the session
 TestArtifacts/  # Exploratory walkthrough reports and formalized test-case documents
 ```
 
@@ -78,9 +81,21 @@ The credentials never appear in test output: the setup step records no trace/scr
 
 Page Objects navigate through `BasePage.open()`, which fails with a clear message if the site redirects away from the requested page (expired trial, missing session) — so a test can never pass by asserting on the redirect target instead.
 
+## API tests
+
+`api/` holds one client class per endpoint group (e.g. `FavoritesApi`), grouped under `SiteApi`. Specs get them from fixtures, each bound to a request context:
+
+| Fixture | Session |
+|---|---|
+| `signedOutApi` | none |
+| `signedInApi` | the shared paid account (the session saved by `auth.setup.ts`) |
+| `pageApi` | whatever the test's browser page is signed in as (shares its cookies) |
+
+API specs live in `tests/api/`; a browser spec can also use `pageApi` to confirm on the server what a UI action changed.
+
 ## Known site defects
 
-Tests guarding a still-open site defect assert the **correct** behavior and are marked `test.fail(true, "Open defect D-xx: …")`. The suite stays green while the defect exists, and Playwright reports the test as an unexpected pass the day the defect is fixed — the cue to remove the marker. Currently open: D-01, D-04/D-05, D-07, D-08, D-09, D-10, D-11, D-12, D-13.
+Tests guarding a still-open site defect assert the **correct** behavior and are marked `test.fail(true, "Open defect D-xx: …")`. The suite stays green while the defect exists, and Playwright reports the test as an unexpected pass the day the defect is fixed — the cue to remove the marker. Currently open: D-01, D-05/D-06, D-07, D-08, D-09, D-10, D-11, D-12, D-13.
 
 An **intermittent** defect can't use `test.fail()` — the test would flip between pass and fail — so its test is quarantined with `test.fixme(true, "Quarantined — open defect D-xx …")` instead: skipped and visibly flagged in the report until the defect is fixed. Currently quarantined: D-15 (logout sometimes leaves the session active).
 
@@ -113,7 +128,7 @@ Every automated test embeds its manual test-case ID (`TC-<AREA>-<NUM>`) in both 
 
 ## CI
 
-`.github/workflows/playwright.yml` runs the suite on every pull request and push to `main`/`master`, nightly at 05:00 UTC (the site under test changes independently of this repo), and on demand from the Actions tab. A newer push to the same branch cancels the older run.
+`.github/workflows/playwright.yml` type-checks the code, then runs the suite on every pull request and push to `main`/`master`, nightly at 05:00 UTC (the site under test changes independently of this repo), and on demand from the Actions tab. A newer push to the same branch cancels the older run.
 
 - **Secrets** (Settings → Secrets and variables → Actions): `TEST_USER_EMAIL`, `TEST_USER_PASSWORD`. Optional repository variable `BASE_URL`.
 - **On CI** the config uses 4 workers, 2 retries (a test passing only on retry is reported as flaky), traces on the first retry, screenshots on failure, a 20-minute global timeout (below the 30-minute job timeout, so reports are always written), and the `github` reporter for inline PR annotations.

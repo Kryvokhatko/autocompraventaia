@@ -43,11 +43,16 @@ test.describe("Stats analytics", () => {
 
     await statsPage.goto("en");
     await expect(statsPage.calendarView).toBeVisible();
-    // The images are requested several seconds after the load event, once
-    // the calendar fills in client-side, and the page keeps background
-    // requests open so "networkidle" never settles. Wait up to 10s for the
-    // first 404/410 response instead — it arrives within ~5s while the
-    // defect exists, and 10s is the observation window once it is fixed.
+    // The calendar opens on the current month, which early in a month has
+    // few or no sales and therefore no images; the previous month always has
+    // a full month of sales, so the check does not depend on today's date.
+    await test.step("Show the previous month's sales", () => statsPage.previousMonthButton.click());
+
+    // The images are requested several seconds after the calendar renders,
+    // and the page keeps background requests open so "networkidle" never
+    // settles. Wait up to 10s for the first 404/410 response instead — it
+    // arrives within a few seconds while the defect exists, and 10s is the
+    // observation window once it is fixed.
     await page
       .waitForResponse((response) => [404, 410].includes(response.status()), { timeout: 10_000 })
       .catch(() => {});

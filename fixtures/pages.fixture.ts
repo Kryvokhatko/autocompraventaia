@@ -11,11 +11,25 @@ import { MapPage } from "../pages/map.page";
 import { TopSalesPage } from "../pages/top-sales.page";
 import { NotificationsPage } from "../pages/notifications.page";
 import { FavoritesPage } from "../pages/favorites.page";
+import { SiteApi } from "../api/site.api";
+import { AUTH_FILE } from "../helpers/test-user";
 
 /**
- * Wires Page Objects into tests, so spec files only ever talk to Page
- * Objects — never construct them inline or touch `page` locators directly.
+ * Wires Page Objects and API clients into tests, so spec files only ever
+ * talk to them — never construct them inline or touch `page` locators
+ * directly.
  */
+type ApiFixtures = {
+  // Request context with no session.
+  signedOutApi: SiteApi;
+  // Request context carrying the shared paid account's session saved by
+  // tests/setup/auth.setup.ts.
+  signedInApi: SiteApi;
+  // The test page's own request context: shares the browser's cookies, so
+  // it is signed in as whoever the page is signed in as.
+  pageApi: SiteApi;
+};
+
 type PageFixtures = {
   homePage: HomePage;
   loginPage: LoginPage;
@@ -31,7 +45,20 @@ type PageFixtures = {
   favoritesPage: FavoritesPage;
 };
 
-export const test = base.extend<PageFixtures>({
+export const test = base.extend<PageFixtures & ApiFixtures>({
+  signedOutApi: async ({ playwright, baseURL }, use) => {
+    const context = await playwright.request.newContext({ baseURL });
+    await use(new SiteApi(context));
+    await context.dispose();
+  },
+  signedInApi: async ({ playwright, baseURL }, use) => {
+    const context = await playwright.request.newContext({ baseURL, storageState: AUTH_FILE });
+    await use(new SiteApi(context));
+    await context.dispose();
+  },
+  pageApi: async ({ page }, use) => {
+    await use(new SiteApi(page.request));
+  },
   homePage: async ({ page }, use) => {
     await use(new HomePage(page));
   },
