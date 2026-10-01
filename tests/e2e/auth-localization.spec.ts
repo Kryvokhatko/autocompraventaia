@@ -11,7 +11,7 @@ import { test, expect } from "../../fixtures/pages.fixture";
  */
 
 test.describe("Login form localization", () => {
-  test("TC-AUTH-001 — login form renders in Spanish under ES locale", { tag: ["@critical", "@p0", "@regression"] }, async ({ loginPage, page }) => {
+  test("TC-AUTH-001 — login form renders in Spanish under ES locale", { tag: ["@critical", "@p0", "@regression", "@demo"] }, async ({ loginPage, page }) => {
     test.info().annotations.push({ type: "test-case", description: "TC-AUTH-001" });
 
     await loginPage.goto("es");
